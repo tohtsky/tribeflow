@@ -24,6 +24,20 @@ int main () {
     //    trace_fpath, n_topics, alpha_zh, beta_zs, kernel, residency_priors,
     //    n_iter, from_, to_
     //)
-    worker.create_slaves();
+    Eigen::MatrixXd Dts_mat, MatrixXi, Theta_zh, Psi_oz, prob_topics_aux;
+    Eigen::MatrixXi Trace_mat, Count_zh, Count_oz, count_h, count_z;
+    map<string, int> hyper2id, obj2id;
+    StampLists stamp_lists;
+    std::tie(
+        Dts_mat, Trace_mat, stamp_lists,
+        Count_zh, Count_oz, count_h, count_z, prob_topics_aux,
+        Theta_zh, Psi_oz, hyper2id, obj2id) = initialize_trace(
+            trace_fpath, n_topics, n_iter, 0, std::nullopt, std::nullopt
+    );
+    worker.create_slaves(Dts_mat, Trace_mat, stamp_lists,
+        Count_zh, Count_oz, count_h, count_z, prob_topics_aux,
+        Theta_zh, Psi_oz, hyper2id, obj2id         
+    );
+
     worker.do_manage();
 }

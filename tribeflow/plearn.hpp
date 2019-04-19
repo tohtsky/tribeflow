@@ -29,8 +29,6 @@ using InterThreadData = string;
 using LearningData = string;
 
 
-
-
 struct MasterWorker {
     struct Slave {
         public:
@@ -59,7 +57,17 @@ struct MasterWorker {
 
     MasterWorker(size_t n_slaves);
     ~MasterWorker();
-    void create_slaves();
+    void create_slaves(
+        const MatrixXd & Dts,
+        const MatrixXi & Trace,
+        const StampLists & stamp_lists,
+        const MatrixXi & Count_zh,
+        const MatrixXi & Count_oz,
+        const VectorXi & count_h,
+        const VectorXi & count_z,
+        const map<string, int> hyper2id,
+        const map<string, int> obj2id
+    );
     void do_manage();
     void add_message(MasterMessage message);
     private: 
