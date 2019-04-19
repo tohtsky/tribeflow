@@ -59,7 +59,7 @@ def main():
     comm = MPI.COMM_WORLD
     rank = comm.rank
     size = comm.size 
-    try:
+    try: ## ???? determin whether this is master or slave?
         comm = MPI.COMM_WORLD
         rank = comm.rank
         size = comm.size 
@@ -68,8 +68,10 @@ def main():
         single_thread = True
     
     if not single_thread and rank != plearn.MASTER:
+        # It's slave!
         plearn.work()
     else:
+        # It's either master or single thread
         started = time.mktime(time.localtime())
         num_lines = 0
         with open(args.trace_fpath) as trace_file:
@@ -115,6 +117,7 @@ def main():
                         args.beta_zs, kernel, residency_priors, \
                         args.num_iter, args.burn_in, from_=from_, to=to)
         else:
+            # it's MPI Master
             dyn = args.dynamic
             if bool(dyn):
                 num_iter = args.num_iter // args.num_batches

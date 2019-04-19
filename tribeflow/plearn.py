@@ -149,6 +149,9 @@ def sample(Dts, Trace, Count_zh, Count_sz_local, \
             kernel.update_state(P_local)
 
 def work():
+    """
+    For MPI Slave
+    """
     comm = MPI.COMM_WORLD
     rank = comm.rank
     
@@ -250,6 +253,9 @@ def fetch_results(comm, num_workers, workloads, Dts, Trace, \
         previous_stamps._extend(z, Dts[Trace[:, -1] == z][:, -1])
 
 def manage(comm, num_workers):
+    """
+    manage slave jobs.
+    """
     available_to_pair = -1
     finished = {}
     num_finished = 0
@@ -319,7 +325,17 @@ def dispatch_jobs(Dts, Trace, Count_zh, Count_sz, count_h, \
         comm.send(kernel.__class__, dest=worker_id)
         comm.Send([kernel.get_state(), MPI.DOUBLE], dest=worker_id) 
 
+
 def generate_workload(nh, num_workers, Trace):
+    """
+    nh: size_t Number of hyper(user id)s.
+    num_workers: size_t # of slaves
+    Trace: Traces
+
+    returns: np.bool of shape (num_workers, len(Traces))
+    it indicates whether a certain trace should be considered by 
+    the slave??
+    """
     hyperids = np.arange(nh)
     np.random.shuffle(hyperids)
 
@@ -337,6 +353,8 @@ def generate_workload(nh, num_workers, Trace):
     assert workloads.sum() == Trace.shape[0]
     return workloads
 
+
+# For master node?
 def fit(trace_fpath, num_topics, alpha_zh, beta_zs, kernel, residency_priors, \
         num_iter, from_=0, to=np.inf):
     '''
