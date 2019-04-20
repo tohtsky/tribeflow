@@ -1,5 +1,8 @@
 #define DEBUG
 #include "plearn.hpp"
+#include "learn_body.hpp"
+
+constexpr size_t CACHE_SIZE = 1;
 
 MasterWorker::Slave::Slave(MasterWorker* parent, size_t id) :
     parent_(parent), my_id(id) {
@@ -28,6 +31,10 @@ void MasterWorker::Slave::set_message_from_master(SlaveStatus msg) {
 }
 
 void MasterWorker::Slave::learn () {
+    const Eigen::MatrixXd & Dts_ref = this->parent_->Dts();
+    const Eigen::MatrixXi & Trace_ref = this->parent_->Trace();
+    const Eigen::VectorXi & trace_hyper_ids = this->parent_->trace_hyper_ids();
+    Eigen::VectorXi trace_topics(this->parent_->trace_topics());
     int nz = this->parent_->Count_zh().rows();
     int nh = this->parent_->hyper2id().size();
     int ns = this->parent_->site2id().size();
@@ -39,6 +46,44 @@ void MasterWorker::Slave::learn () {
     Eigen::MatrixXi Count_sz = Eigen::MatrixXi::Zero(ns, nz);
     Eigen::VectorXi count_h = Eigen::VectorXi::Zero(nh);
     Eigen::VectorXi count_z = Eigen::VectorXi::Zero(nz);
+    fast_populate(
+        this->parent_->Trace(), this->parent_->trace_hyper_ids(),
+        this->parent_->trace_topics(),
+        Count_zh, Count_sz, count_h, count_z
+    );
+
+    map<size_t, Eigen::MatrixXi> previous_encounters_s;
+    for (size_t worker_id = 0; worker_id < parent_->n_slaves(); worker_id++) {
+        previous_encounters_s.insert(
+            {worker_id, Eigen::MatrixXi::Zero(ns, nz)}
+        );
+    }
+    StampLists stamps(nz);
+    for (size_t i = 0; i < Trace_ref.rows(); i++) {
+        auto z = trace_topics(i);
+        stamps.at(z).push_back(Dts_ref(i, Dts_ref.cols() - 1));
+    }
+
+    Eigen::VectorXd aux = Eigen::VectorXd::Zero(nz);
+
+    Eigen::MatrixXi Count_sz_pair = Eigen::MatrixXi::Zero(ns, nz);
+    Eigen::MatrixXi Count_sz_others = Eigen::MatrixXi::Zero(ns, nz);
+    Eigen::MatrixXi Count_sz_sum = Eigen::MatrixXi::Zero(ns, nz); 
+
+    Eigen::MatrixXd Theta_zh(nz, nh), Psi_sz(ns, nz);
+    bool can_pair = true;
+    for (size_t i = 0; i < (parent_->hyper_params.n_iter / CACHE_SIZE) ; i++) {
+        Count_sz_sum = Count_sz + Count_sz_others;
+        count_z = Count_sz_sum.colwise().sum().transpose();
+        // em
+
+        // update local counts
+        Count_sz = Count_sz_sum - Count_sz_others;
+        count_z = Count_sz.colwise().sum().transpose(); 
+
+        // Update expected belief of other processors
+
+    }
 }
 
 void MasterWorker::Slave::main_job () {
@@ -89,7 +134,7 @@ void MasterWorker::Slave::set_data(InterThreadData data) {
 
 MasterWorker::MasterWorker (size_t n_slaves, HyperParams hyper_params,
         InputData && input_data, int random_seed):
-    n_slaves(n_slaves), hyper_params(hyper_params),
+    n_slaves_(n_slaves), hyper_params(hyper_params),
     input_data(input_data), gen(random_seed) {}
 
 MasterWorker::~MasterWorker () {
@@ -109,11 +154,11 @@ void MasterWorker::create_slaves () {
     std::shuffle(hyper_ids.begin(), hyper_ids.end(), gen);
     vector<int> hyper_to_slave_id(nh);
     for (size_t i = 0; i < nh; i++) {
-        size_t slave_id = i % this->n_slaves;
+        size_t slave_id = i % this->n_slaves_;
         hyper_to_slave_id[hyper_ids[i]] = slave_id;
     }
 
-    Eigen::MatrixXi workloads = Eigen::MatrixXi::Zero(n_slaves, n_paths);
+    Eigen::MatrixXi workloads = Eigen::MatrixXi::Zero(n_slaves_, n_paths);
 
     for (size_t i = 0; i < n_paths; i++) {
         int h = (trace_hyper_ids())(i);
@@ -121,13 +166,13 @@ void MasterWorker::create_slaves () {
         workloads(slave_id, i) = 1;
     }
 
-    for(size_t i = 0; i < n_slaves; i++) {
+    for(size_t i = 0; i < n_slaves_; i++) {
         slaves.emplace_back(
             this, i
         );
     }
     //LearningData workload = "Debug message";
-    for(size_t i = 0; i < n_slaves; i++) {
+    for(size_t i = 0; i < n_slaves_; i++) {
         slaves[i].start_work();
         slaves[i].set_message_from_master(SlaveStatus::LEARN);
     }
@@ -136,9 +181,9 @@ void MasterWorker::create_slaves () {
 void MasterWorker::do_manage () {
     int available_to_pair = -1;
     unsigned n_finished = 0;
-    vector<bool> finished(n_slaves, false);
+    vector<bool> finished(n_slaves_, false);
 
-    while (n_finished != n_slaves) {
+    while (n_finished != n_slaves_) {
         int worker_id;
         SlaveStatus what;
         std::tie(worker_id, what) = receive_message();
@@ -147,7 +192,7 @@ void MasterWorker::do_manage () {
                 cout << "Worker[" << worker_id << "] has started it's job." << endl;
                 break;
             case SlaveStatus::PAIRME:
-                if (n_finished == n_slaves -1 ) {
+                if (n_finished == n_slaves_ -1 ) {
                     // reserve it!
                     available_to_pair = worker_id;
                 } else {
@@ -163,7 +208,7 @@ void MasterWorker::do_manage () {
                 finished[worker_id] = true;
                 n_finished++;
                 // The last worker who has requested pairing should be paired with itself.
-                if ( (n_finished == n_slaves -1) && available_to_pair != -1) {
+                if ( (n_finished == n_slaves_ -1) && available_to_pair != -1) {
                     slaves[available_to_pair].set_pair(available_to_pair);
                 }
                 break;
@@ -173,7 +218,7 @@ void MasterWorker::do_manage () {
                         );
         }
     }
-    for (size_t i = 0; i < n_slaves; i++)
+    for (size_t i = 0; i < n_slaves_; i++)
         slaves[i].set_message_from_master(SlaveStatus::STOP);
 
 }

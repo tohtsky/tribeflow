@@ -83,12 +83,19 @@ struct MasterWorker {
         return std::get<TRACE_HYPER>(this->input_data);
     }
 
+    inline const Eigen::VectorXi & trace_topics () const { 
+        return std::get<TRACE_TOPIC>(this->input_data);
+    }
+
+    size_t n_slaves () const {
+        return n_slaves_;
+    }
+    const HyperParams hyper_params;
 
     private: 
-    HyperParams hyper_params;
     InputData input_data; 
     MasterMessage receive_message();
-    size_t n_slaves;
+    size_t n_slaves_;
     vector<Slave> slaves;
     std::mutex master_mutex;
     std::mutex message_add_mutex;

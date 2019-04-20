@@ -13,18 +13,25 @@ constexpr int DTS=0, TRACE=1, TRACE_HYPER=2, TRACE_TOPIC=3,
           STAMP_LIST=4, COUNT_ZH=5, COUNT_sz=6, HYPER2ID=7,
           SITE2ID=8;
 
-using HyperParams = std::tuple<
-    size_t, // n_topics
-    size_t, // n_iter
-    size_t, // burn_in
-    bool, // dynamic
-    size_t, // n_batches,
-    double, // alpha_zh
-    double, // beta_zs
-    string, // kernel_name
-    vector<double> // residency_priors
->;
+struct HyperParams {
+    inline HyperParams(size_t n_topics, size_t n_iter, size_t burn_in,
+    bool dynamic, size_t n_batches, double alpha_zh,
+    double beta_zs, string kernel_name, const vector<double> & residency_priors):
+        n_topics(n_topics), n_iter(n_iter), burn_in(burn_in),
+        dynamic(dynamic), n_batches(n_batches), alpha_zh(alpha_zh),
+        beta_zs(beta_zs), kernel_name(kernel_name), residency_priors(residency_priors){
+        }
 
+    const size_t n_topics;
+    const size_t n_iter;
+    const size_t burn_in;
+    const bool dynamic;
+    const size_t n_batches;
+    const double alpha_zh;
+    const double beta_zs;
+    const string kernel_name;
+    const vector<double> residency_priors; 
+};
 
 using InputData = std::tuple<
     Eigen::MatrixXd, //Dts_mat
