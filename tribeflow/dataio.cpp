@@ -12,24 +12,25 @@ size_t count_line(string file_path) {
             std::istreambuf_iterator<char>(), '\n') + 1;
 }
 
-InitializeTraceReturnType initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
+InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
         size_t from_, optional<size_t> to, optional<vector<int>> initial_assign,
         int random_seed) {
     std::mt19937 gen(random_seed);
     std::uniform_int_distribution<> dist_topic_assignment(0, n_topics - 1) ;
 
     map<pair<int, int>, int> count_zh_dict;
-    map<pair<int, int>, int> count_oz_dict;
+    map<pair<int, int>, int> count_sz_dict;
     map<int, int> count_z_dict;
     map<int, int> count_h_dict;
     map<string, int> hyper2id;
-    map<string, int> obj2id; 
+    map<string, int> site2id; 
 
     string line;
     ifstream ifs(trace_fpath);
 
     vector<vector<double>> Dts;
     vector<vector<int>> Trace;
+    vector<int> trace_hyper_ids_vec, trace_topics_vec;
 
     size_t i = 0;
     optional<size_t> mem_size_lazy;
@@ -79,19 +80,21 @@ InitializeTraceReturnType initialize_trace(string trace_fpath, size_t n_topics, 
         int h = hyper2id[hyper_str];
         count_zh_dict[std::pair<int, int>{z, h}] += 1;
         count_h_dict[h] += 1;
-        vector<int> line_visits_ids {h};
+        vector<int> line_visits_ids;
         for (size_t j = mem_size + 1; j < words.size() ; j++ ) {
             auto site_name = words[j];
-            if (obj2id.find(site_name) == obj2id.end()) {
-                obj2id[site_name] = obj2id.size();
+            if (site2id.find(site_name) == site2id.end()) {
+                site2id[site_name] = site2id.size();
             }
-            int o = obj2id[site_name];
+            int o = site2id[site_name];
             line_visits_ids.push_back(o);
 
-            count_oz_dict[pair<int, int>{o, z}] += 1;
+            count_sz_dict[pair<int, int>{o, z}] += 1;
             count_z_dict[z] += 1;
         }
-        line_visits_ids.push_back(z);
+        //line_visits_ids.push_back(z);
+        trace_hyper_ids_vec.push_back(h);
+        trace_topics_vec.push_back(z);
         Trace.push_back(line_visits_ids);
 
         i++;
@@ -105,31 +108,35 @@ InitializeTraceReturnType initialize_trace(string trace_fpath, size_t n_topics, 
     );
     //vector_print(argsort_indices) ;
     Eigen::MatrixXd Dts_mat(argsort_indices.size(), *mem_size_lazy);
-    Eigen::MatrixXi Trace_mat(argsort_indices.size(), *mem_size_lazy + 3);
+    Eigen::MatrixXi Trace_mat(argsort_indices.size(), *mem_size_lazy + 1);
+    Eigen::VectorXi trace_hyper_ids(trace_hyper_ids_vec.size());
+    Eigen::VectorXi trace_topics(trace_topics_vec.size());
+
     for (size_t i = 0; i < argsort_indices.size(); i++) {
         auto ind = argsort_indices[i];
+        trace_hyper_ids(i) = trace_hyper_ids_vec[ind];
+        trace_topics(i) = trace_topics[ind];
         for (size_t j = 0; j < *mem_size_lazy; j++ ) {
             Dts_mat(i, j) = Dts[ind][j];
         }
-        for (size_t j = 0; j < *mem_size_lazy + 3 ; j++) {
+        for (size_t j = 0; j < *mem_size_lazy + 1 ; j++) {
             Trace_mat(i, j) = Trace[ind][j];
         }
     }
     size_t nh = hyper2id.size();
-    size_t no = obj2id.size(); 
+    size_t ns = site2id.size(); 
     size_t nz = n_topics;
 
     StampLists previous_stamps(n_topics);
 
-    const size_t last_ind_trace = Trace_mat.cols() - 1;
     const size_t last_ind_dts = Dts_mat.cols() - 1;
     for (size_t i = 0; i < argsort_indices.size(); i++ ) {
-        int topic = Trace_mat(i, last_ind_trace); 
+        int topic = trace_topics(i); 
         previous_stamps.at(topic).push_back(Dts_mat(i, last_ind_dts));
     }
 
     Eigen::MatrixXi Count_zh = Eigen::MatrixXi::Zero(nz, nh);
-    Eigen::MatrixXi Count_oz = Eigen::MatrixXi::Zero(no, nz);
+    Eigen::MatrixXi Count_sz = Eigen::MatrixXi::Zero(ns, nz);
     Eigen::VectorXi count_h = Eigen::VectorXi::Zero(nh);
     Eigen::VectorXi count_z = Eigen::VectorXi::Zero(nz);
 
@@ -143,18 +150,22 @@ InitializeTraceReturnType initialize_trace(string trace_fpath, size_t n_topics, 
             Count_zh(z, h) = count_zh_dict[std::pair<int, int>{z, h}];
         }
 
-        for (int o = 0; o < no; o++) {
-            Count_oz(o, z) = count_oz_dict[std::pair<int, int>{o, z}];
+        for (int s = 0; s < ns; s++) {
+            Count_sz(s, z) = count_sz_dict[std::pair<int, int>{s, z}];
         }
     }
-    if (Count_oz.colwise().sum().transpose() != count_z) {
+    if (Count_sz.colwise().sum().transpose() != count_z) {
         throw std::runtime_error("");
+    }
+    if (Count_zh.colwise().sum().transpose() != count_h) {
+        throw std::runtime_error(""); 
     }
     auto prob_topics_aux = Eigen::VectorXd::Zero(nz);
     auto Theta_zh = Eigen::MatrixXd::Zero(nz, nh);
-    auto Psi_oz = Eigen::MatrixXd::Zero(no, nz);
-    return std::make_tuple(Dts_mat, Trace_mat, previous_stamps, Count_zh, Count_oz,
-           count_h, count_z, prob_topics_aux, Theta_zh, Psi_oz,
-           hyper2id, obj2id);
+    auto Psi_sz = Eigen::MatrixXd::Zero(ns, nz);
+    return std::make_tuple(Dts_mat, Trace_mat, trace_hyper_ids,
+            trace_topics, previous_stamps, Count_zh, Count_sz,
+           //prob_topics_aux, Theta_zh, Psi_sz,
+           hyper2id, site2id);
 }
 

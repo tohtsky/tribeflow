@@ -10,8 +10,12 @@
 #include<atomic>
 #include<tuple>
 #include<optional>
+#include<random>
 #include<Eigen/Eigen> 
+#include"stamp_lists.hpp"
+#include"dataio.hpp"
 
+using namespace Eigen;
 using namespace std;
 
 enum class SlaveStatus {
@@ -26,8 +30,6 @@ enum class SlaveStatus {
 
 using MasterMessage = std::tuple<int, SlaveStatus>;
 using InterThreadData = string;
-using LearningData = string;
-
 
 struct MasterWorker {
     struct Slave {
@@ -37,9 +39,9 @@ struct MasterWorker {
             void set_pair(int id);
             void join();
             void set_message_from_master(SlaveStatus msg);
-            void set_workload(LearningData data);
         private:
             void main_job();
+            void learn();
             void send_message_to_master(SlaveStatus status_code);
             void sample();
             SlaveStatus receive_message_from_master();
@@ -52,25 +54,39 @@ struct MasterWorker {
             optional<InterThreadData> received_data;
             optional<int> pair_id;
             optional<SlaveStatus> message_from_master;
-            optional<LearningData> workload; 
+            //optional<LearningData> workload; 
     };
 
-    MasterWorker(size_t n_slaves);
+    MasterWorker(size_t n_slaves, HyperParams hyper_params,
+            InputData && input_data, int random_seed=42);
     ~MasterWorker();
-    void create_slaves(
-        const MatrixXd & Dts,
-        const MatrixXi & Trace,
-        const StampLists & stamp_lists,
-        const MatrixXi & Count_zh,
-        const MatrixXi & Count_oz,
-        const VectorXi & count_h,
-        const VectorXi & count_z,
-        const map<string, int> hyper2id,
-        const map<string, int> obj2id
-    );
+    void create_slaves();
     void do_manage();
     void add_message(MasterMessage message);
+    inline const map<string, int> & hyper2id () const{
+        return std::get<HYPER2ID>(input_data);
+    }
+    inline const map<string, int> & site2id () const{
+        return std::get<SITE2ID>(input_data);
+    }
+
+    inline const Eigen::MatrixXd Dts () const {
+        return std::get<DTS>(input_data);
+    }
+    inline const Eigen::MatrixXi Trace () const{
+        return std::get<TRACE>(input_data);
+    }
+    inline const Eigen::MatrixXi & Count_zh () const {
+        return std::get<COUNT_ZH>(input_data);
+    }
+    inline const Eigen::VectorXi & trace_hyper_ids () const { 
+        return std::get<TRACE_HYPER>(this->input_data);
+    }
+
+
     private: 
+    HyperParams hyper_params;
+    InputData input_data; 
     MasterMessage receive_message();
     size_t n_slaves;
     vector<Slave> slaves;
@@ -78,6 +94,7 @@ struct MasterWorker {
     std::mutex message_add_mutex;
     std::condition_variable condition;
     queue<MasterMessage> messages_from_slaves;
+    std::mt19937 gen;
 
 };
 

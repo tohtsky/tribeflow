@@ -27,8 +27,18 @@ void MasterWorker::Slave::set_message_from_master(SlaveStatus msg) {
     message_from_master = msg;
 }
 
-void MasterWorker::Slave::set_workload(LearningData data) {
-    workload = data;
+void MasterWorker::Slave::learn () {
+    int nz = this->parent_->Count_zh().rows();
+    int nh = this->parent_->hyper2id().size();
+    int ns = this->parent_->site2id().size();
+    int mem_size = this->parent_->Dts().cols();
+    if (mem_size <=0) {
+        throw std::runtime_error("mem_size <=0 somehow ");
+    }
+    Eigen::MatrixXi Count_zh = Eigen::MatrixXi::Zero(nz, nh);
+    Eigen::MatrixXi Count_sz = Eigen::MatrixXi::Zero(ns, nz);
+    Eigen::VectorXi count_h = Eigen::VectorXi::Zero(nh);
+    Eigen::VectorXi count_z = Eigen::VectorXi::Zero(nz);
 }
 
 void MasterWorker::Slave::main_job () {
@@ -36,15 +46,10 @@ void MasterWorker::Slave::main_job () {
         auto event = receive_message_from_master();
         if (event == SlaveStatus::LEARN ) {
             send_message_to_master(SlaveStatus::STARTED);
-            for(;;) {
-                if (workload) {
-                    auto workload_body = std::move(*workload);
-                    workload = std::nullopt;
-                    //sample(std::move(workload_body));
-                    break;
-                }
-            }
-
+            learn();
+            //if (my_id == 0) {
+            //    cout << parent_->Count_zh().transpose() << endl;
+            //}
             send_message_to_master(SlaveStatus::FINISHED);
         } else if (event == SlaveStatus::SENDRESULTS) {
         } else if (event == SlaveStatus::STOP) {
@@ -82,7 +87,10 @@ void MasterWorker::Slave::set_data(InterThreadData data) {
 
 
 
-MasterWorker::MasterWorker (size_t n_slaves): n_slaves(n_slaves) {}
+MasterWorker::MasterWorker (size_t n_slaves, HyperParams hyper_params,
+        InputData && input_data, int random_seed):
+    n_slaves(n_slaves), hyper_params(hyper_params),
+    input_data(input_data), gen(random_seed) {}
 
 MasterWorker::~MasterWorker () {
     for(auto & slave: slaves) {
@@ -91,13 +99,36 @@ MasterWorker::~MasterWorker () {
 }
 
 void MasterWorker::create_slaves () {
-    for(size_t i = 0; i < n_slaves; i++) {
-        slaves.emplace_back(this, i);
+    size_t nh = hyper2id().size();
+    size_t ns = site2id().size();
+    size_t nz = Count_zh().rows();
+    size_t n_paths = Trace().rows();
+    vector<int> hyper_ids(nh);
+    for (size_t i = 0; i < nh; i++) hyper_ids[i] = i;
+
+    std::shuffle(hyper_ids.begin(), hyper_ids.end(), gen);
+    vector<int> hyper_to_slave_id(nh);
+    for (size_t i = 0; i < nh; i++) {
+        size_t slave_id = i % this->n_slaves;
+        hyper_to_slave_id[hyper_ids[i]] = slave_id;
     }
-    LearningData workload = "Debug message";
+
+    Eigen::MatrixXi workloads = Eigen::MatrixXi::Zero(n_slaves, n_paths);
+
+    for (size_t i = 0; i < n_paths; i++) {
+        int h = (trace_hyper_ids())(i);
+        size_t slave_id = hyper_to_slave_id[h];
+        workloads(slave_id, i) = 1;
+    }
+
+    for(size_t i = 0; i < n_slaves; i++) {
+        slaves.emplace_back(
+            this, i
+        );
+    }
+    //LearningData workload = "Debug message";
     for(size_t i = 0; i < n_slaves; i++) {
         slaves[i].start_work();
-        slaves[i].set_workload(workload);
         slaves[i].set_message_from_master(SlaveStatus::LEARN);
     }
 }
