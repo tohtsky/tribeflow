@@ -127,7 +127,7 @@ void MasterWorker::Slave::learn () {
         can_pair = paired_update(Count_sz, Count_sz_others, P);
         kernel->update_state(P);
     }
-    this->result = std::make_tuple(trace_topics, Count_zh, Count_sz, count_h, count_h, P);
+    this->result = ResultData{trace_topics, Count_zh, Count_sz, count_h, count_z, P};
 }
 
 bool MasterWorker::Slave::paired_update(
@@ -260,7 +260,7 @@ void MasterWorker::create_slaves () {
     }
 }
 
-void MasterWorker::do_manage () {
+OutPutData MasterWorker::do_manage () {
     int available_to_pair = -1;
     unsigned n_finished = 0;
     vector<bool> finished(n_slaves_, false);
@@ -315,7 +315,7 @@ void MasterWorker::do_manage () {
                 if (!slaves[worker_id].result) {
                     throw std::runtime_error("A slave says it's done, but result not set..");
                 }
-                slave_results[worker_id] = std::move(*(slaves[worker_id].result));
+                slave_results[worker_id] = *(slaves[worker_id].result);
                 n_finished++;
                 // The last worker who has requested pairing should be paired with itself.
                 if ( (n_finished == n_slaves_ -1) && available_to_pair != -1) {
@@ -331,6 +331,74 @@ void MasterWorker::do_manage () {
                         );
         }
     }
+    Eigen::MatrixXi Count_zh = Eigen::MatrixXi::Zero(
+        this->Count_zh().rows(), this->Count_zh().cols()
+    );
+    Eigen::MatrixXi Count_sz = Eigen::MatrixXi::Zero(
+        this->Count_sz().rows(), this->Count_sz().cols() 
+    );
+
+    Eigen::VectorXi count_h = Eigen::VectorXi::Zero(
+        this->hyper2id().size()
+    );
+    Eigen::VectorXi count_z = Eigen::VectorXi::Zero(
+        this->Count_zh().rows()
+    );
+
+    Eigen::MatrixXd P = kernel_->get_state();
+    P.setZero(P.rows(), P.cols());
+    Eigen::VectorXi trace_topics(Trace().rows());
+    for (auto iter = slave_results.begin(); iter != slave_results.end(); iter++) {
+        size_t worker_id = iter->first;
+        {
+            const Eigen::VectorXi & trace_topics_slave = iter->second.trace_topics;
+            size_t i = 0;
+            for (auto original_i : workloads_[worker_id] ) {
+                trace_topics(original_i) = trace_topics_slave(i);
+                i++;
+            }
+        }
+        Count_zh += iter->second.Count_zh;
+        Count_sz += iter->second.Count_sz;
+        count_h += iter->second.count_h;
+        count_z += iter->second.count_z;
+        P += iter->second.P;
+    }
+    P /= n_slaves_;
+    kernel_ -> update_state(P);
+
+    Eigen::MatrixXd Theta_zh(count_z.rows(), count_h.rows());
+    Eigen::MatrixXd Psi_sz(site2id().size(), count_z.rows());
+    aggregate(Count_zh, Count_sz, count_h, count_z,
+        hyper_params.alpha_zh, hyper_params.beta_zs, Theta_zh, Psi_sz);
+    col_normalize(Theta_zh);
+    col_normalize(Psi_sz);
+    StampLists stamps(Theta_zh.rows());
+    for (size_t z = 0; z < Theta_zh.rows(); z++ ){
+        stamps[z].resize(0);
+    }
+    for(size_t i = 0; i < trace_topics.rows(); i++) {
+        int z = trace_topics(i);
+        stamps.at(z).push_back(Dts()(i, Dts().cols() - 1));
+    }
+    OutPutData result;
+    result.alpha_zh = hyper_params.alpha_zh;
+    result.beta_zs = hyper_params.beta_zs;
+    result.n_iter = hyper_params.n_iter;
+    result.burn_in = hyper_params.burn_in;
+
+    result.n_topics = Theta_zh.rows();
+
+    result.Theta_zh = std::move(Theta_zh);
+    result.Psi_sz = std::move(Psi_sz);
+    result.hyper2id = std::move(get<HYPER2ID>(input_data));
+    result.site2id = std::move(get<SITE2ID>(input_data));
+    result.Count_zh = std::move(Count_zh);
+    result.Count_sz = std::move(Count_sz);
+    result.count_z = std::move(count_z);
+    result.count_h = std::move(count_h);
+    result.kernel_name = hyper_params.kernel_name;
+    return result;
 }
 
 void MasterWorker::add_message (MasterMessage message ) {
@@ -344,9 +412,33 @@ MasterMessage MasterWorker::receive_message() {
     condition.wait(
             lock, [this] { return !this->messages_from_slaves.empty(); }
             );
-    MasterMessage message = std::move(this->messages_from_slaves.front());
-    this->messages_from_slaves.pop();
+    MasterMessage message;
+    {
+        std::unique_lock<std::mutex> lock__(message_add_mutex);
+        message = std::move(this->messages_from_slaves.front()); 
+        this->messages_from_slaves.pop();
+    }
     return message;
 }
 
+OutPutData plearn(
+    const string & trace_fpath, size_t n_workers, size_t n_topics,
+    size_t n_iter, double alpha_zh, double beta_zs, const string & kernel_name,
+    const vector<double> & residency_priors) { 
+
+    size_t burn_in = 0;
+    HyperParams hyper_params( 
+            n_topics, n_iter, burn_in, dynamic, n_batches,
+            alpha_zh, beta_zs, kernel_name, residency_priors
+            ); 
+
+    MasterWorker worker(n_workers, hyper_params,
+        initialize_trace(
+            trace_fpath, n_topics, n_iter, 0, std::nullopt, std::nullopt
+        )
+    );
+    worker.create_slaves();
+    OutPutData result = worker.do_manage();
+    return OutPutData;
+}
 

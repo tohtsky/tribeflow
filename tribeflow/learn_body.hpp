@@ -72,6 +72,7 @@ void em(const Eigen::MatrixXd & Dts, const Eigen::MatrixXi & Trace,
         size_t burn_in, std::unique_ptr<KernelBase> && kernel, std::mt19937 & gen,
         bool average_and_normalize=true);
 
+void col_normalize(Eigen::MatrixXd & target);
 
 size_t sample(
     size_t i,
@@ -90,5 +91,13 @@ size_t sample(
     std::unique_ptr<KernelBase> && kernel,
     std::mt19937 & gen);
 
+void aggregate(
+        const Eigen::MatrixXi & Count_zh, 
+    const Eigen::MatrixXi & Count_sz, 
+    const Eigen::VectorXi & count_h,
+    const Eigen::VectorXi & count_z,
+    double alpha_zh, double beta_zs,
+    Eigen::MatrixXd & Theta_zh, 
+    Eigen::MatrixXd & Psi_sz); 
 
 #endif

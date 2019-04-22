@@ -160,12 +160,11 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
     if (Count_zh.colwise().sum().transpose() != count_h) {
         throw std::runtime_error(""); 
     }
-    auto prob_topics_aux = Eigen::VectorXd::Zero(nz);
-    auto Theta_zh = Eigen::MatrixXd::Zero(nz, nh);
-    auto Psi_sz = Eigen::MatrixXd::Zero(ns, nz);
+    //auto prob_topics_aux = Eigen::VectorXd::Zero(nz);
+    //auto Theta_zh = Eigen::MatrixXd::Zero(nz, nh);
+    //auto Psi_sz = Eigen::MatrixXd::Zero(ns, nz);
     return std::make_tuple(Dts_mat, Trace_mat, trace_hyper_ids,
             trace_topics, previous_stamps, Count_zh, Count_sz,
-           //prob_topics_aux, Theta_zh, Psi_sz,
            hyper2id, site2id);
 }
 

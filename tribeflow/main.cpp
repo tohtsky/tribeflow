@@ -3,10 +3,10 @@
 
 int main () {
     string trace_fpath = "test_data/sampled_trace.data";
-    unsigned n_workers = 3;
+    size_t n_workers = 4;
     unsigned n_topics = 20;
     string model_output_path = "model.data";
-    unsigned n_iter = 10;
+    unsigned n_iter = 1000;
     unsigned burn_in = 0;
     bool dynamic = false;
     unsigned n_batches = 10;
@@ -20,13 +20,10 @@ int main () {
         alpha_zh, beta_zs, kernel_name, residency_priors
     );
 
-    // double leaveout = 3e-1;
-    // unsigned n_traces = count_line(trace_fpath);
 
     MasterWorker worker(n_workers, hyper_params, initialize_trace(
-            trace_fpath, n_topics, n_iter, 0, std::nullopt, std::nullopt
+        trace_fpath, n_topics, n_iter, 0, std::nullopt, std::nullopt
     ));
     worker.create_slaves();
-
-    worker.do_manage();
+    OutPutData result = worker.do_manage();
 }

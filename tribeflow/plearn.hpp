@@ -31,18 +31,30 @@ enum class SlaveStatus {
 
 
 using MasterMessage = std::tuple<int, SlaveStatus>;
-using ResultData = std::tuple<
-    Eigen::VectorXi, // trace_topics,
-    Eigen::MatrixXi, // Count_zh
-    Eigen::MatrixXi, // Count_sz
-    Eigen::VectorXi, // count_h
-    Eigen::VectorXi, // count_z
-    Eigen::MatrixXd  // P
->;
+
+struct ResultData{
+    inline ResultData(
+        const Eigen::VectorXi & trace_topics,
+        const Eigen::MatrixXi & Count_zh,
+        const Eigen::MatrixXi & Count_sz,
+        const Eigen::VectorXi & count_h,
+        const Eigen::VectorXi & count_z,
+        const Eigen::MatrixXd & P):
+        trace_topics(trace_topics), Count_zh(Count_zh), Count_sz(Count_sz),
+        count_h(count_h), count_z(count_z), P(P) {} 
+    inline ResultData() {}
+    ResultData(const ResultData &) = default;
+    ResultData & operator = (const ResultData &) = default;
+    Eigen::VectorXi trace_topics;
+    Eigen::MatrixXi Count_zh;
+    Eigen::MatrixXi Count_sz;
+    Eigen::VectorXi count_h;
+    Eigen::VectorXi count_z;
+    Eigen::MatrixXd P;
+};
 
 // Count_sz and P
-using InterThreadData = std::tuple<Eigen::MatrixXi, Eigen::MatrixXd>;
-
+using InterThreadData = std::tuple<Eigen::MatrixXi, Eigen::MatrixXd>; 
 
 struct MasterWorker {
     struct Slave {
@@ -95,7 +107,7 @@ struct MasterWorker {
             InputData && input_data);
     ~MasterWorker();
     void create_slaves();
-    void do_manage();
+    OutPutData do_manage();
     void add_message(MasterMessage message);
     inline const map<string, int> & hyper2id () const{
         return std::get<HYPER2ID>(input_data);
@@ -113,6 +125,9 @@ struct MasterWorker {
     inline const Eigen::MatrixXi & Count_zh () const {
         return std::get<COUNT_ZH>(input_data);
     }
+    inline const Eigen::MatrixXi & Count_sz () const {
+        return std::get<COUNT_SZ>(input_data);
+    } 
     inline const Eigen::VectorXi & trace_hyper_ids () const { 
         return std::get<TRACE_HYPER>(this->input_data);
     }
@@ -150,7 +165,11 @@ struct MasterWorker {
     vector<vector<int>>workloads_;
     std::unique_ptr<KernelBase> kernel_;
     map<size_t, ResultData> slave_results;
-
 };
+
+OutPutData plearn(const string & trace_fpath, size_t n_workers, size_t n_topics,
+    size_t n_iter, double alpha_zh, double beta_zs, const string & kernel_name,
+    const vector<double> & residency_priors
+    );
 
 #endif
