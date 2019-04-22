@@ -1,87 +1,77 @@
-#!/usr/bin/env python
-# -*- coding: utf-8
-from __future__ import division, print_function
-'''Setup script'''
-
-import glob
-import numpy
+from setuptools import setup, Extension
+from setuptools.command.build_ext import build_ext
 import os
-import platform
 import sys
+import setuptools
 
-from distutils.core import setup
-from distutils.extension import Extension
-from Cython.Distutils import build_ext
+__version__ = '0.0.1'
 
-SOURCE = '.'
-os.chdir(SOURCE)
+def get_eigen3_include():
+    EIGEN3_INCLUDE_DIR = os.environ.get('EIGEN3_INCLUDE_DIR', None)
+    if EIGEN3_INCLUDE_DIR is None:
+        raise RuntimeError('''Specify Eigen3 include directory by the Env variable
+    ``EIGEN3_INCLUDE_DIR``
+''')
+    return EIGEN3_INCLUDE_DIR
 
-if platform.system() == 'Darwin':
-    os.environ["CC"] = "gcc-5"
-    os.environ["CXX"] = "gcc-5"
+class get_pybind_include(object):
+    """Helper class to determine the pybind11 include path
+    The purpose of this class is to postpone importing pybind11
+    until it is actually installed, so that the ``get_include()``
+    method can be invoked. """
 
-if sys.version_info[:2] < (2, 7):
-    print('Requires Python version 2.7 or later (%d.%d detected).' %
-          sys.version_info[:2])
-    sys.exit(-1)
+    def __init__(self, user=False):
+        self.user = user
 
-def get_packages():
-    '''Appends all packages (based on recursive sub dirs)'''
+    def __str__(self):
+        import pybind11
+        return pybind11.get_include(self.user)
 
-    packages  = ['tribeflow']
 
-    for package in packages:
-        base = os.path.join(package, '**/')
-        sub_dirs = glob.glob(base)
-        while len(sub_dirs) != 0:
-            for sub_dir in sub_dirs:
-                package_name = sub_dir.replace('/', '.')
-                if package_name.endswith('.'):
-                    package_name = package_name[:-1]
+ext_modules = [
+    Extension(
+        'tribeflowpp',
+        ['tribeflow/plearn.cpp', 'tribeflow/dataio.cpp',
+            'tribeflow/learn_body.cpp', 'tribeflow/kernels/base.cpp'],
+        include_dirs=[
+            # Path to pybind11 headers
+            get_pybind_include(),
+            get_pybind_include(user=True),
+            get_eigen3_include()
+        ],
+        language='c++'
+    ),
+]
 
-                packages.append(package_name)
-        
-            base = os.path.join(base, '**/')
-            sub_dirs = glob.glob(base)
 
-    return packages
+class BuildExt(build_ext):
+    """A custom build extension for adding compiler-specific options."""
+    c_opts = {
+        'msvc': ['/EHsc'],
+        'unix': [],
+    }
 
-def get_extensions():
-    '''Get's all .pyx and.pxd files'''
+    if sys.platform == 'darwin':
+        c_opts['unix'] += ['-stdlib=libc++', '-mmacosx-version-min=10.7']
 
-    extensions = []
-    packages = get_packages()
+    def build_extensions(self):
+        ct = self.compiler.compiler_type
+        opts = self.c_opts.get(ct, [])
+        opts.append('-std=c++17')
+        opts.append('-march=native')
+        opts.append('-O3')
+        for ext in self.extensions:
+            ext.extra_compile_args = opts
+        build_ext.build_extensions(self)
 
-    for pkg in packages:
-        pkg_folder = pkg.replace('.', '/')
-        pyx_files = glob.glob(os.path.join(pkg_folder, '*.pyx'))
-        include_dirs = ['tribeflow/myrandom/', numpy.get_include()]
-        for pyx in pyx_files:
-            pxd = pyx.replace('pyx', 'pxd')
-            module = pyx.replace('.pyx', '').replace('/', '.')
+setup(
+    name='tribeflowpp',
+    version=__version__,
+    description='A tribeflow re-implementation using C++11',
+    long_description='',
+    ext_modules=ext_modules,
+    install_requires=['pybind11>=2.2'],
+    cmdclass={'build_ext': BuildExt},
+    zip_safe=False,
+)
 
-            if os.path.exists(pxd):
-                ext_files = [pyx, pxd]
-            else:
-                ext_files = [pyx]
-            
-            if module == 'tribeflow.myrandom.random':
-                ext_files.append(os.path.join(pkg_folder, 'randomkit.c'))
-            
-            extension = Extension(module, ext_files,
-                    include_dirs=include_dirs,
-                    extra_compile_args=['-msse', '-msse2', '-mfpmath=sse', \
-                            '-fopenmp', '-Wno-unused-function'], #cython warnings supress
-                    extra_link_args=['-fopenmp'])
-
-            extensions.append(extension)
-
-    return extensions
-
-if __name__ == "__main__":
-    packages = get_packages()
-    extensions = get_extensions()
-    setup(cmdclass = {'build_ext': build_ext},
-            name             = 'tribeflow',
-            packages         = packages,
-            ext_modules      = extensions)

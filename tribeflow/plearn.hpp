@@ -167,9 +167,15 @@ struct MasterWorker {
     map<size_t, ResultData> slave_results;
 };
 
-OutPutData plearn(const string & trace_fpath, size_t n_workers, size_t n_topics,
+OutPutData plearn(string trace_fpath, size_t n_workers, size_t n_topics,
+    size_t n_iter, double alpha_zh, double beta_zs, string kernel_name,
+    vector<double> residency_priors
+    );
+
+void interface_function(
+    const string & trace_fpath, size_t n_workers, size_t n_topics,
     size_t n_iter, double alpha_zh, double beta_zs, const string & kernel_name,
     const vector<double> & residency_priors
-    );
+);
 
 #endif
