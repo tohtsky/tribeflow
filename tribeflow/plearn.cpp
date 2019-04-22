@@ -1,9 +1,18 @@
 #define DEBUG
+
 #include "plearn.hpp"
 #include "learn_body.hpp"
 #include "kernels/base.hpp"
 
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/functional.h>
+#include <pybind11/eigen.h>
+
+
 constexpr size_t CACHE_SIZE = 1;
+namespace py = pybind11;
+using std::size_t;
 
 MasterWorker::Slave::Slave(MasterWorker* parent, size_t id) :
     parent_(parent), my_id(id), slave_mutex(new std::mutex), 
@@ -422,11 +431,13 @@ MasterMessage MasterWorker::receive_message() {
 }
 
 OutPutData plearn(
-    const string & trace_fpath, size_t n_workers, size_t n_topics,
-    size_t n_iter, double alpha_zh, double beta_zs, const string & kernel_name,
-    const vector<double> & residency_priors) { 
+    string  trace_fpath, size_t n_workers, size_t n_topics,
+    size_t n_iter, double alpha_zh, double beta_zs, string kernel_name,
+    vector<double> residency_priors) { 
 
     size_t burn_in = 0;
+    bool dynamic = false;
+    size_t n_batches = 0;
     HyperParams hyper_params( 
             n_topics, n_iter, burn_in, dynamic, n_batches,
             alpha_zh, beta_zs, kernel_name, residency_priors
@@ -439,6 +450,36 @@ OutPutData plearn(
     );
     worker.create_slaves();
     OutPutData result = worker.do_manage();
-    return OutPutData;
+    return result;
 }
 
+//void interface_function(const string & trace_fpath, size_t n_workers, size_t n_topics,
+//    size_t n_iter, double alpha_zh, double beta_zs, const string & kernel_name,
+//    const vector<double> & residency_priors) {
+//    OutPutData result = plearn(
+//        const string & trace_fpath, size_t n_workers, size_t n_topics,
+//        size_t n_iter, double alpha_zh, double beta_zs, const string & kernel_name,
+//        const vector<double> & residency_priors
+//    );
+//}
+PYBIND11_MODULE(tribeflowpp, m) {
+    py::class_<OutPutData> outputdate(m, "OutPutData");
+    m.doc() = R"pbdoc(
+        C++ Re implementation of Tribeflow
+        -----------------------
+        .. currentmodule:: tribeflowpp
+        .. autosummary::
+           :toctree: _generate
+           learn
+    )pbdoc";
+
+    m.def("learn", &plearn, R"pbdoc(
+        pybind parallel learn function
+    )pbdoc");
+
+#ifdef VERSION_INFO
+    m.attr("__version__") = VERSION_INFO;
+#else
+    m.attr("__version__") = "dev";
+#endif
+}
