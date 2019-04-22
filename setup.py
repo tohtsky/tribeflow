@@ -59,7 +59,7 @@ class BuildExt(build_ext):
         opts = self.c_opts.get(ct, [])
         opts.append('-std=c++17')
         opts.append('-march=native')
-        opts.append('-O3')
+        opts.append('-g')
         for ext in self.extensions:
             ext.extra_compile_args = opts
         build_ext.build_extensions(self)

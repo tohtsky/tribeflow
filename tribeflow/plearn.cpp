@@ -435,30 +435,62 @@ MasterMessage MasterWorker::receive_message() {
 }
 
 OutPutData plearn(
-    string  trace_fpath, size_t n_workers, size_t n_topics,
+    string trace_fpath, size_t n_workers, size_t n_topics,
     size_t n_iter, double alpha_zh, double beta_zs, string kernel_name,
     vector<double> residency_priors) { 
 
     size_t burn_in = 0;
     bool dynamic = false;
     size_t n_batches = 0;
+#ifdef DEBUG
+    cout << "Start learning with " << endl << "trace_fpath: " << trace_fpath << endl
+        << "n_topics : " << n_topics << endl 
+        << "n_iter : " << n_iter << endl 
+        << "alpha_zh : " << alpha_zh << endl
+        << "beta_zs : " << beta_zs << endl 
+        << "residency_priors: [";
+    for (auto & v: residency_priors) 
+        cout << v << ", ";
+    cout << "]" << endl;
+#endif
+    cout << "hy construction" << endl;
+
     HyperParams hyper_params( 
             n_topics, n_iter, burn_in, dynamic, n_batches,
             alpha_zh, beta_zs, kernel_name, residency_priors
             ); 
 
-    MasterWorker worker(n_workers, hyper_params,
-        initialize_trace(
-            trace_fpath, n_topics, n_iter, 0, std::nullopt, std::nullopt
-        )
-    );
+    auto input = initialize_trace(
+                trace_fpath, n_topics, n_iter, 0, std::nullopt, std::nullopt
+                );
+    MasterWorker worker(n_workers, hyper_params,std::move(input));
     worker.create_slaves();
     OutPutData result = worker.do_manage();
     return result;
 }
 
 PYBIND11_MODULE(tribeflowpp, m) {
-    py::class_<OutPutData> outputdate(m, "OutPutData");
+    py::class_<OutPutData> (m, "OutPutData")
+        .def(py::init<>())
+        .def_readwrite("n_topics", &OutPutData::n_topics)
+        .def_readwrite("alpha_zh", &OutPutData::alpha_zh)
+        .def_readwrite("alpha_zh", &OutPutData::beta_zs)
+        .def_readwrite("residency_priors", &OutPutData::residency_priors)
+        .def_readwrite("n_iter", &OutPutData::n_iter)
+        .def_readwrite("kernel_name", &OutPutData::kernel_name)
+        .def_readwrite("burn_in", &OutPutData::burn_in)
+        .def_readwrite("Theta_zh", &OutPutData::Theta_zh)
+        .def_readwrite("Psi_sz", &OutPutData::Psi_sz)
+        .def_readwrite("Dts", &OutPutData::Dts)
+        .def_readwrite("Count_zh", &OutPutData::Count_zh)
+        .def_readwrite("Count_sz", &OutPutData::Count_sz)
+        .def_readwrite("count_h", &OutPutData::count_h)
+        .def_readwrite("count_z", &OutPutData::count_z) 
+        .def_readwrite("assign", &OutPutData::assign) 
+        .def_readwrite("hyper2id", &OutPutData::hyper2id) 
+        .def_readwrite("site2id", &OutPutData::site2id) 
+        ;
+
     m.doc() = R"pbdoc(
         C++ Re implementation of Tribeflow
         -----------------------

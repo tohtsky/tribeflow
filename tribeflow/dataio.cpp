@@ -36,9 +36,9 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
     size_t l_in_file = 1;
     optional<size_t> mem_size_lazy;
 
-    do  {
+    while (!ifs.eof()) {
         std::getline(ifs, line);
-        if (!line.size()) {
+        if (line.empty()) {
             cerr << " Warning: Got empty line at " << l_in_file << endl;
             l_in_file++;
             continue;
@@ -108,14 +108,16 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
 
         i++;
         l_in_file++;
-    } while (!ifs.eof());
+    }
     vector<int> argsort_indices(i); 
     std::iota(argsort_indices.begin(), argsort_indices.end(), 0);
+
     std::sort(
         argsort_indices.begin(),
         argsort_indices.end(),
         [&Dts](int i, int j) { return Dts[i].back() < Dts[j].back(); }
     );
+
     //vector_print(argsort_indices) ;
     Eigen::MatrixXd Dts_mat(argsort_indices.size(), *mem_size_lazy);
     Eigen::MatrixXi Trace_mat(argsort_indices.size(), *mem_size_lazy + 1);
@@ -125,7 +127,7 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
     for (size_t i = 0; i < argsort_indices.size(); i++) {
         auto ind = argsort_indices[i];
         trace_hyper_ids(i) = trace_hyper_ids_vec[ind];
-        trace_topics(i) = trace_topics[ind];
+        trace_topics(i) = trace_topics_vec.at(ind);
         for (size_t j = 0; j < *mem_size_lazy; j++ ) {
             Dts_mat(i, j) = Dts[ind][j];
         }
@@ -133,6 +135,7 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
             Trace_mat(i, j) = Trace[ind][j];
         }
     }
+
     size_t nh = hyper2id.size();
     size_t ns = site2id.size(); 
     size_t nz = n_topics;
