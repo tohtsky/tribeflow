@@ -1,19 +1,20 @@
 #ifndef PLEAN_HPP
 #define PLEAN_HPP
 
-#include<iostream>
-#include<string>
-#include<vector>
-#include<map>
-#include<thread>
-#include<queue>
-#include<atomic>
-#include<tuple>
-#include<optional>
-#include<random>
-#include<Eigen/Eigen> 
-#include"stamp_lists.hpp"
-#include"dataio.hpp"
+#include <iostream>
+#include <string>
+#include <vector>
+#include <map>
+#include <thread>
+#include <queue>
+#include <atomic>
+#include <tuple>
+#include <optional>
+#include <random>
+#include <Eigen/Eigen> 
+#include "stamp_lists.hpp"
+#include "dataio.hpp"
+#include "kernels/base.hpp"
 
 using namespace Eigen;
 using namespace std;
@@ -28,37 +29,70 @@ enum class SlaveStatus {
     STOP
 };
 
+
 using MasterMessage = std::tuple<int, SlaveStatus>;
-using InterThreadData = string;
+using ResultData = std::tuple<
+    Eigen::VectorXi, // trace_topics,
+    Eigen::MatrixXi, // Count_zh
+    Eigen::MatrixXi, // Count_sz
+    Eigen::VectorXi, // count_h
+    Eigen::VectorXi, // count_z
+    Eigen::MatrixXd  // P
+>;
+
+// Count_sz and P
+using InterThreadData = std::tuple<Eigen::MatrixXi, Eigen::MatrixXd>;
+
 
 struct MasterWorker {
     struct Slave {
         public:
             Slave(MasterWorker* parent, size_t id);
             void start_work();
-            void set_pair(int id);
+            void set_pair_id(size_t pair_id); 
+            void set_data_other_thread(const InterThreadData & pair_data);
+
             void join();
             void set_message_from_master(SlaveStatus msg);
+            Slave(Slave&&) = default;
+            Slave& operator = (Slave&&) = default;
+
+            inline InterThreadData exchanged_data() {
+                return std::make_tuple(*send_data_count, *send_data_p);
+            }
+            inline void set_exchange_data(const InterThreadData & other_data) {
+                received_data = other_data;
+            }
+
         private:
+            MasterWorker* parent_; 
+            const size_t my_id ; 
+            std::unique_ptr<std::mutex> slave_mutex;
+            std::unique_ptr<condition_variable> slave_condition;
             void main_job();
             void learn();
             void send_message_to_master(SlaveStatus status_code);
             void sample();
             SlaveStatus receive_message_from_master();
-            void send_data_to_other(size_t other_id, InterThreadData data); 
-            void set_data(InterThreadData data);
+            bool paired_update(
+                Eigen::MatrixXi & Count_sz, 
+                Eigen::MatrixXi & Count_sz_others, 
+                Eigen::MatrixXd & P_local
+            );
 
-            MasterWorker* parent_;
-            const size_t my_id ; 
             optional<std::thread> working_thread;
+            Eigen::MatrixXi* send_data_count;
+            Eigen::MatrixXd* send_data_p; 
             optional<InterThreadData> received_data;
-            optional<int> pair_id;
+            optional<size_t> pair_id_;
             optional<SlaveStatus> message_from_master;
-            //optional<LearningData> workload; 
+            map<size_t, Eigen::MatrixXi> previous_encounters_s;
+        public:
+            optional<ResultData> result; 
     };
 
     MasterWorker(size_t n_slaves, HyperParams hyper_params,
-            InputData && input_data, int random_seed=42);
+            InputData && input_data);
     ~MasterWorker();
     void create_slaves();
     void do_manage();
@@ -90,18 +124,32 @@ struct MasterWorker {
     size_t n_slaves () const {
         return n_slaves_;
     }
-    const HyperParams hyper_params;
+
+    const vector<vector<int>> & workloads() {
+        return workloads_;
+    }
+
+    Eigen::MatrixXd P () {
+        return kernel_->get_state();
+    }
 
     private: 
-    InputData input_data; 
     MasterMessage receive_message();
     size_t n_slaves_;
+    public:
+    const HyperParams hyper_params; 
+    private: 
+    InputData input_data; 
+
     vector<Slave> slaves;
     std::mutex master_mutex;
     std::mutex message_add_mutex;
     std::condition_variable condition;
     queue<MasterMessage> messages_from_slaves;
     std::mt19937 gen;
+    vector<vector<int>>workloads_;
+    std::unique_ptr<KernelBase> kernel_;
+    map<size_t, ResultData> slave_results;
 
 };
 

@@ -3,11 +3,11 @@
 
 int main () {
     string trace_fpath = "test_data/sampled_trace.data";
-    unsigned n_workers = 4;
-    unsigned n_topics = 50;
+    unsigned n_workers = 3;
+    unsigned n_topics = 20;
     string model_output_path = "model.data";
-    unsigned n_iter = 20;
-    unsigned burn_in = 5;
+    unsigned n_iter = 10;
+    unsigned burn_in = 0;
     bool dynamic = false;
     unsigned n_batches = 10;
     double alpha_zh = 50.0 / n_topics ;
