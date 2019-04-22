@@ -33,10 +33,16 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
     vector<int> trace_hyper_ids_vec, trace_topics_vec;
 
     size_t i = 0;
+    size_t l_in_file = 1;
     optional<size_t> mem_size_lazy;
 
-    while (!ifs.eof()) {
+    do  {
         std::getline(ifs, line);
+        if (!line.size()) {
+            cerr << " Warning: Got empty line at " << l_in_file << endl;
+            l_in_file++;
+            continue;
+        }
         stringstream ls(line);
         string word;
 
@@ -45,7 +51,10 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
             words.push_back(word);
 
         if (words.size() < 4) {
+            cerr << "got following line at " << i << ": " << endl;
+            cerr << line << endl;
             throw std::runtime_error("each row of input data must consists of 4 data.");
+
         }
         if ( (words.size() - 2) % 2 != 0) {
             throw std::runtime_error("each row must contains 2 + 2 * n_path entries."); 
@@ -98,7 +107,8 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
         Trace.push_back(line_visits_ids);
 
         i++;
-    }
+        l_in_file++;
+    } while (!ifs.eof());
     vector<int> argsort_indices(i); 
     std::iota(argsort_indices.begin(), argsort_indices.end(), 0);
     std::sort(

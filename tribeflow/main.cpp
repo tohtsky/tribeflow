@@ -2,9 +2,9 @@
 #include "dataio.hpp"
 
 int main () {
-    string trace_fpath = "test_data/sampled_trace.data";
-    size_t n_workers = 4;
-    unsigned n_topics = 20;
+    string trace_fpath = "/Users/tomoki.otsuki/src/tribeflow/trace.data";
+    size_t n_workers = 8;
+    unsigned n_topics = 50;
     string model_output_path = "model.data";
     unsigned n_iter = 1000;
     unsigned burn_in = 0;
@@ -26,4 +26,5 @@ int main () {
     ));
     worker.create_slaves();
     OutPutData result = worker.do_manage();
+    cout << result.Theta_zh << endl;
 }

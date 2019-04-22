@@ -377,10 +377,14 @@ OutPutData MasterWorker::do_manage () {
     for (size_t z = 0; z < Theta_zh.rows(); z++ ){
         stamps[z].resize(0);
     }
+
+    const Eigen::MatrixXd & Dts_ref = Dts();
+    size_t Dts_last_col = Dts_ref.cols() - 1;
     for(size_t i = 0; i < trace_topics.rows(); i++) {
         int z = trace_topics(i);
-        stamps.at(z).push_back(Dts()(i, Dts().cols() - 1));
+        stamps.at(z).push_back(Dts_ref(i, Dts_last_col));
     }
+
     OutPutData result;
     result.alpha_zh = hyper_params.alpha_zh;
     result.beta_zs = hyper_params.beta_zs;
@@ -427,6 +431,8 @@ OutPutData plearn(
     const vector<double> & residency_priors) { 
 
     size_t burn_in = 0;
+    size_t n_batches = 0;
+    bool dynamic = false;
     HyperParams hyper_params( 
             n_topics, n_iter, burn_in, dynamic, n_batches,
             alpha_zh, beta_zs, kernel_name, residency_priors
@@ -439,6 +445,6 @@ OutPutData plearn(
     );
     worker.create_slaves();
     OutPutData result = worker.do_manage();
-    return OutPutData;
+    return result;
 }
 
