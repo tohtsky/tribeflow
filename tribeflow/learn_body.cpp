@@ -105,12 +105,12 @@ inline void aggregate(
     size_t nz = Theta_zh.rows();
     size_t nh = Theta_zh.cols();
     size_t ns = Psi_sz.rows();
-    for (int z = 0; z < nz; z++) {
-        for (int h = 0; h < nh; h++ ){
+    for (size_t z = 0; z < nz; z++) {
+        for (size_t h = 0; h < nh; h++ ){
             Theta_zh(z, h) += dir_posterior(Count_zh(z, h), count_h(h), nz, alpha_zh);
         }
 
-        for (int s = 0; s < ns; s++) {
+        for (size_t s = 0; s < ns; s++) {
             Psi_sz(s, z) += dir_posterior(Count_sz(s, z), count_z(z), ns, beta_zs);
         }
     }
@@ -199,13 +199,14 @@ size_t sample(
     int prev;
     int site;
     double prev_prob;
-    
+
+    size_t trace_cols = Trace.cols(); 
     for (size_t z = 0; z < nz; z++ ) {
         site = Trace(i, 0);
         prob_topics_aux[z] = kernel->pdf(dt, z, previous_stamps) * 
             dir_posterior(Count_zh(z, hyper_id), count_h(hyper_id), nz, alpha_zh) *
             dir_posterior(Count_sz(site, z), count_z(z), ns, beta_zs);
-        for(size_t j = 1; j < Trace.cols(); j++ ) {
+        for(size_t j = 1; j < trace_cols; j++ ) {
             site = Trace(i, j);
             prev = Trace(i, j - 1);
             prev_prob = dir_posterior(Count_sz(prev, z), count_z(z), ns, beta_zs);

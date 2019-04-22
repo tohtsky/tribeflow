@@ -91,7 +91,8 @@ void MasterWorker::Slave::learn () {
     }
 
     StampLists stamps(nz);
-    for (size_t i = 0; i < Trace.rows(); i++) {
+    size_t n_trace = Trace.rows();
+    for (size_t i = 0; i < n_trace; i++) {
         auto z = trace_topics(i);
         stamps.at(z).push_back(Dts(i, Dts.cols() - 1));
     }
@@ -375,13 +376,15 @@ OutPutData MasterWorker::do_manage () {
     col_normalize(Theta_zh);
     col_normalize(Psi_sz);
     StampLists stamps(Theta_zh.rows());
-    for (size_t z = 0; z < Theta_zh.rows(); z++ ){
+    size_t nz = Theta_zh.rows();
+    for (size_t z = 0; z < nz; z++ ){
         stamps[z].resize(0);
     }
 
     const DoubleMatrix & Dts_ref = Dts();
     size_t Dts_last_col = Dts_ref.cols() - 1;
-    for(size_t i = 0; i < trace_topics.rows(); i++) {
+    size_t n_trace = trace_topics.rows();
+    for(size_t i = 0; i < n_trace; i++) {
         int z = trace_topics(i);
         stamps.at(z).push_back(Dts_ref(i, Dts_last_col));
     }
@@ -392,7 +395,7 @@ OutPutData MasterWorker::do_manage () {
     result.n_iter = hyper_params.n_iter;
     result.burn_in = hyper_params.burn_in;
 
-    result.n_topics = Theta_zh.rows();
+    result.n_topics = nz;
 
     result.Theta_zh = std::move(Theta_zh);
     result.Psi_sz = std::move(Psi_sz);

@@ -31,7 +31,7 @@ class get_pybind_include(object):
 ext_modules = [
     Extension(
         'tribeflowpp',
-        ['tribeflow/plearn.cpp', 'tribeflow/dataio.cpp',
+        ['tribeflow/binding.cpp', 'tribeflow/plearn.cpp', 'tribeflow/dataio.cpp',
             'tribeflow/learn_body.cpp', 'tribeflow/kernels/base.cpp'],
         include_dirs=[
             # Path to pybind11 headers

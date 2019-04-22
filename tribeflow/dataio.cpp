@@ -156,17 +156,17 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
     IntegerVector count_h = IntegerVector::Zero(nh);
     IntegerVector count_z = IntegerVector::Zero(nz);
 
-    for (int h = 0; h < nh; h++) {
+    for (size_t h = 0; h < nh; h++) {
         count_h(h) = count_h_dict[h];
     } 
-    for (int z = 0; z < nz; z++) {
+    for (size_t z = 0; z < nz; z++) {
         count_z(z) = count_z_dict[z];
 
-        for (int h = 0; h < nh; h++) {
+        for (size_t h = 0; h < nh; h++) {
             Count_zh(z, h) = count_zh_dict[std::pair<int, int>{z, h}];
         }
 
-        for (int s = 0; s < ns; s++) {
+        for (size_t s = 0; s < ns; s++) {
             Count_sz(s, z) = count_sz_dict[std::pair<int, int>{s, z}];
         }
     }
