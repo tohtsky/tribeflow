@@ -7,7 +7,11 @@
 //using namespace Eigen;
 using namespace std;
 
-using IntegerVector = Eigen::Matrix<int32_t, -1, Eigen::Dynamic>;
+using DoubleMatrix = Eigen::MatrixXd;
+using IntegerMatrix = Eigen::MatrixXi;
+using IntegerVector = Eigen::VectorXi;
+
+//using IntegerVector = Eigen::Matrix<int32_t, -1, Eigen::Dynamic>;
 //using IntegerMatrix = Eigen::Matrix<int32_t, -1, -1, Eigen::Dynamic>;
 constexpr int DTS=0, TRACE=1, TRACE_HYPER=2, TRACE_TOPIC=3, 
           STAMP_LIST=4, COUNT_ZH=5, COUNT_SZ=6, HYPER2ID=7,
@@ -39,8 +43,8 @@ struct HyperParams {
 using InputData = std::tuple<
     Eigen::MatrixXd, //Dts_mat
     Eigen::MatrixXi, // Trace_mat
-    Eigen::VectorXi, // trace_hyper_ids
-    Eigen::VectorXi, // trace_topics
+    IntegerVector, // trace_hyper_ids
+    IntegerVector, // trace_topics
     StampLists, //stamp_lists
     Eigen::MatrixXi, // Count_zh
     Eigen::MatrixXi, // Count_sz
@@ -57,11 +61,11 @@ struct OutPutData {
     size_t burn_in;
     Eigen::MatrixXd Dts;
     Eigen::MatrixXi Count_zh, Count_sz;
-    Eigen::VectorXi count_h, count_z;
+    IntegerVector count_h, count_z;
     Eigen::MatrixXd Theta_zh, Psi_sz; 
     string kernel_name;
     Eigen::MatrixXd P;
-    Eigen::VectorXi assign;
+    IntegerVector assign;
     map<string, int> hyper2id, site2id;
 };
 

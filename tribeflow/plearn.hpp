@@ -34,22 +34,22 @@ using MasterMessage = std::tuple<int, SlaveStatus>;
 
 struct ResultData{
     inline ResultData(
-        const Eigen::VectorXi & trace_topics,
+        const IntegerVector & trace_topics,
         const Eigen::MatrixXi & Count_zh,
         const Eigen::MatrixXi & Count_sz,
-        const Eigen::VectorXi & count_h,
-        const Eigen::VectorXi & count_z,
+        const IntegerVector & count_h,
+        const IntegerVector & count_z,
         const Eigen::MatrixXd & P):
         trace_topics(trace_topics), Count_zh(Count_zh), Count_sz(Count_sz),
         count_h(count_h), count_z(count_z), P(P) {} 
     inline ResultData() {}
     ResultData(const ResultData &) = default;
     ResultData & operator = (const ResultData &) = default;
-    Eigen::VectorXi trace_topics;
+    IntegerVector trace_topics;
     Eigen::MatrixXi Count_zh;
     Eigen::MatrixXi Count_sz;
-    Eigen::VectorXi count_h;
-    Eigen::VectorXi count_z;
+    IntegerVector count_h;
+    IntegerVector count_z;
     Eigen::MatrixXd P;
 };
 
@@ -128,11 +128,11 @@ struct MasterWorker {
     inline const Eigen::MatrixXi & Count_sz () const {
         return std::get<COUNT_SZ>(input_data);
     } 
-    inline const Eigen::VectorXi & trace_hyper_ids () const { 
+    inline const IntegerVector & trace_hyper_ids () const { 
         return std::get<TRACE_HYPER>(this->input_data);
     }
 
-    inline const Eigen::VectorXi & trace_topics () const { 
+    inline const IntegerVector & trace_topics () const { 
         return std::get<TRACE_TOPIC>(this->input_data);
     }
 

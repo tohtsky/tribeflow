@@ -27,6 +27,9 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
 
     string line;
     ifstream ifs(trace_fpath);
+    if (!ifs) {
+        throw std::runtime_error("Couldn't read the file ");
+    }
 
     vector<vector<double>> Dts;
     vector<vector<int>> Trace;
@@ -119,10 +122,10 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
     );
 
     //vector_print(argsort_indices) ;
-    Eigen::MatrixXd Dts_mat(argsort_indices.size(), *mem_size_lazy);
-    Eigen::MatrixXi Trace_mat(argsort_indices.size(), *mem_size_lazy + 1);
-    Eigen::VectorXi trace_hyper_ids(trace_hyper_ids_vec.size());
-    Eigen::VectorXi trace_topics(trace_topics_vec.size());
+    DoubleMatrix Dts_mat(argsort_indices.size(), *mem_size_lazy);
+    IntegerMatrix Trace_mat(argsort_indices.size(), *mem_size_lazy + 1);
+    IntegerVector trace_hyper_ids(trace_hyper_ids_vec.size());
+    IntegerVector trace_topics(trace_topics_vec.size());
 
     for (size_t i = 0; i < argsort_indices.size(); i++) {
         auto ind = argsort_indices[i];
@@ -148,10 +151,10 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
         previous_stamps.at(topic).push_back(Dts_mat(i, last_ind_dts));
     }
 
-    Eigen::MatrixXi Count_zh = Eigen::MatrixXi::Zero(nz, nh);
-    Eigen::MatrixXi Count_sz = Eigen::MatrixXi::Zero(ns, nz);
-    Eigen::VectorXi count_h = Eigen::VectorXi::Zero(nh);
-    Eigen::VectorXi count_z = Eigen::VectorXi::Zero(nz);
+    IntegerMatrix Count_zh = IntegerMatrix::Zero(nz, nh);
+    IntegerMatrix Count_sz = IntegerMatrix::Zero(ns, nz);
+    IntegerVector count_h = IntegerVector::Zero(nh);
+    IntegerVector count_z = IntegerVector::Zero(nz);
 
     for (int h = 0; h < nh; h++) {
         count_h(h) = count_h_dict[h];
@@ -173,9 +176,9 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
     if (Count_zh.colwise().sum().transpose() != count_h) {
         throw std::runtime_error(""); 
     }
-    //auto prob_topics_aux = Eigen::VectorXd::Zero(nz);
-    //auto Theta_zh = Eigen::MatrixXd::Zero(nz, nh);
-    //auto Psi_sz = Eigen::MatrixXd::Zero(ns, nz);
+    //auto prob_topics_aux = Vector::Zero(nz);
+    //auto Theta_zh = DoubleMatrix::Zero(nz, nh);
+    //auto Psi_sz = DoubleMatrix::Zero(ns, nz);
     return std::make_tuple(Dts_mat, Trace_mat, trace_hyper_ids,
             trace_topics, previous_stamps, Count_zh, Count_sz,
            hyper2id, site2id);

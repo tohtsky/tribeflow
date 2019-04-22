@@ -4,16 +4,8 @@
 #include "learn_body.hpp"
 #include "kernels/base.hpp"
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <pybind11/functional.h>
-#include <pybind11/eigen.h>
-
 
 constexpr size_t CACHE_SIZE = 1;
-namespace py = pybind11;
-using std::size_t;
-
 MasterWorker::Slave::Slave(MasterWorker* parent, size_t id) :
     parent_(parent), my_id(id), slave_mutex(new std::mutex), 
     slave_condition(new std::condition_variable){
@@ -40,17 +32,17 @@ void MasterWorker::Slave::learn () {
     const vector<vector<int>> & workloads = this->parent_->workloads();
     const vector<int> & relevant_trace_ind =  workloads.at(my_id);
 
-    const Eigen::MatrixXd & Dts_ref = this->parent_->Dts();
-    const Eigen::MatrixXi & Trace_ref = this->parent_->Trace();
-    const Eigen::VectorXi & trace_hyper_ids_ref = this->parent_->trace_hyper_ids();
-    const Eigen::MatrixXi & trace_topics_ref = this->parent_->trace_topics(); 
+    const DoubleMatrix & Dts_ref = this->parent_->Dts();
+    const IntegerMatrix & Trace_ref = this->parent_->Trace();
+    const IntegerVector & trace_hyper_ids_ref = this->parent_->trace_hyper_ids();
+    const IntegerMatrix & trace_topics_ref = this->parent_->trace_topics(); 
 
     auto kernel = kernel_factory(this->parent_->hyper_params.kernel_name);
 
-    Eigen::MatrixXd Dts(relevant_trace_ind.size(), Dts_ref.cols()); 
-    Eigen::MatrixXi Trace(relevant_trace_ind.size(), Trace_ref.cols());
-    Eigen::VectorXi trace_hyper_ids(relevant_trace_ind.size());
-    Eigen::VectorXi trace_topics(relevant_trace_ind.size()); 
+    DoubleMatrix Dts(relevant_trace_ind.size(), Dts_ref.cols()); 
+    IntegerMatrix Trace(relevant_trace_ind.size(), Trace_ref.cols());
+    IntegerVector trace_hyper_ids(relevant_trace_ind.size());
+    IntegerVector trace_topics(relevant_trace_ind.size()); 
 
     for(size_t i = 0; i < relevant_trace_ind.size(); i++) {
         size_t orig_ind = relevant_trace_ind[i];
@@ -64,8 +56,8 @@ void MasterWorker::Slave::learn () {
             Trace.rows(), this->parent_->Count_zh().rows(),
             this->parent_->hyper_params.residency_priors);
 
-    Eigen::MatrixXd P(this->parent_->P());
-    Eigen::MatrixXd P_pair(P);
+    DoubleMatrix P(this->parent_->P());
+    DoubleMatrix P_pair(P);
     kernel->update_state(P);
 
 
@@ -80,10 +72,10 @@ void MasterWorker::Slave::learn () {
     if (mem_size <=0) {
         throw std::runtime_error("mem_size <=0 somehow ");
     }
-    Eigen::MatrixXi Count_zh = Eigen::MatrixXi::Zero(nz, nh);
-    Eigen::MatrixXi Count_sz = Eigen::MatrixXi::Zero(ns, nz);
-    Eigen::VectorXi count_h = Eigen::VectorXi::Zero(nh);
-    Eigen::VectorXi count_z = Eigen::VectorXi::Zero(nz);
+    IntegerMatrix Count_zh = IntegerMatrix::Zero(nz, nh);
+    IntegerMatrix Count_sz = IntegerMatrix::Zero(ns, nz);
+    IntegerVector count_h = IntegerVector::Zero(nh);
+    IntegerVector count_z = IntegerVector::Zero(nz);
     fast_populate(
         this->parent_->Trace(), this->parent_->trace_hyper_ids(),
         this->parent_->trace_topics(),
@@ -94,7 +86,7 @@ void MasterWorker::Slave::learn () {
 
     for (size_t worker_id = 0; worker_id < parent_->n_slaves(); worker_id++) {
         previous_encounters_s.insert(
-            {worker_id, Eigen::MatrixXi::Zero(ns, nz)}
+            {worker_id, IntegerMatrix::Zero(ns, nz)}
         );
     }
 
@@ -106,12 +98,12 @@ void MasterWorker::Slave::learn () {
 
     vector<double> prob_topics_aux(nz, 0.0);
 
-    //Eigen::MatrixXi Count_sz_pair = Eigen::MatrixXi::Zero(ns, nz);
-    Eigen::MatrixXi Count_sz_others = Eigen::MatrixXi::Zero(ns, nz);
-    Eigen::MatrixXi Count_sz_sum = Eigen::MatrixXi::Zero(ns, nz); 
+    //IntegerMatrix Count_sz_pair = IntegerMatrix::Zero(ns, nz);
+    IntegerMatrix Count_sz_others = IntegerMatrix::Zero(ns, nz);
+    IntegerMatrix Count_sz_sum = IntegerMatrix::Zero(ns, nz); 
 
-    Eigen::MatrixXd Theta_zh = Eigen::MatrixXd::Zero(nz, nh);
-    Eigen::MatrixXd Psi_sz = Eigen::MatrixXd::Zero(ns, nz);
+    DoubleMatrix Theta_zh = DoubleMatrix::Zero(nz, nh);
+    DoubleMatrix Psi_sz = DoubleMatrix::Zero(ns, nz);
     bool can_pair = true;
     for (size_t i = 0; i < (parent_->hyper_params.n_iter / CACHE_SIZE) ; i++) {
         Count_sz_sum = Count_sz + Count_sz_others;
@@ -140,9 +132,9 @@ void MasterWorker::Slave::learn () {
 }
 
 bool MasterWorker::Slave::paired_update(
-        Eigen::MatrixXi & Count_sz, 
-        Eigen::MatrixXi & Count_sz_others, 
-        Eigen::MatrixXd & P_local) {
+        IntegerMatrix & Count_sz, 
+        IntegerMatrix & Count_sz_others, 
+        DoubleMatrix & P_local) {
     send_message_to_master(SlaveStatus::PAIRME);
     SlaveStatus am_i_paired = receive_message_from_master();
     if (am_i_paired != SlaveStatus::PAIRED) 
@@ -159,8 +151,8 @@ bool MasterWorker::Slave::paired_update(
         throw std::runtime_error("Exchanged data not set..."); 
     } 
 
-    const Eigen::MatrixXi & Count_sz_pair = std::get<0>(*received_data);
-    const Eigen::MatrixXd & P_pair = std::get<1>(*received_data);
+    const IntegerMatrix & Count_sz_pair = std::get<0>(*received_data);
+    const DoubleMatrix & P_pair = std::get<1>(*received_data);
 
     Count_sz_others += Count_sz_pair;
     Count_sz_others -= this->previous_encounters_s.at(*pair_id_);
@@ -250,7 +242,7 @@ void MasterWorker::create_slaves () {
         hyper_to_slave_id[hyper_ids[i]] = slave_id;
     }
     //vector<vector<int>> workloads(n_slaves_);
-    //Eigen::MatrixXi workloads = Eigen::MatrixXi::Zero(n_slaves_, n_paths);
+    //IntegerMatrix workloads = IntegerMatrix::Zero(n_slaves_, n_paths);
     for (size_t i = 0; i < n_paths; i++) {
         int h = (trace_hyper_ids())(i);
         size_t slave_id = hyper_to_slave_id[h];
@@ -340,27 +332,27 @@ OutPutData MasterWorker::do_manage () {
                         );
         }
     }
-    Eigen::MatrixXi Count_zh = Eigen::MatrixXi::Zero(
+    IntegerMatrix Count_zh = IntegerMatrix::Zero(
         this->Count_zh().rows(), this->Count_zh().cols()
     );
-    Eigen::MatrixXi Count_sz = Eigen::MatrixXi::Zero(
+    IntegerMatrix Count_sz = IntegerMatrix::Zero(
         this->Count_sz().rows(), this->Count_sz().cols() 
     );
 
-    Eigen::VectorXi count_h = Eigen::VectorXi::Zero(
+    IntegerVector count_h = IntegerVector::Zero(
         this->hyper2id().size()
     );
-    Eigen::VectorXi count_z = Eigen::VectorXi::Zero(
+    IntegerVector count_z = IntegerVector::Zero(
         this->Count_zh().rows()
     );
 
-    Eigen::MatrixXd P = kernel_->get_state();
+    DoubleMatrix P = kernel_->get_state();
     P.setZero(P.rows(), P.cols());
-    Eigen::VectorXi trace_topics(Trace().rows());
+    IntegerVector trace_topics(Trace().rows());
     for (auto iter = slave_results.begin(); iter != slave_results.end(); iter++) {
         size_t worker_id = iter->first;
         {
-            const Eigen::VectorXi & trace_topics_slave = iter->second.trace_topics;
+            const IntegerVector & trace_topics_slave = iter->second.trace_topics;
             size_t i = 0;
             for (auto original_i : workloads_[worker_id] ) {
                 trace_topics(original_i) = trace_topics_slave(i);
@@ -376,8 +368,8 @@ OutPutData MasterWorker::do_manage () {
     P /= n_slaves_;
     kernel_ -> update_state(P);
 
-    Eigen::MatrixXd Theta_zh(count_z.rows(), count_h.rows());
-    Eigen::MatrixXd Psi_sz(site2id().size(), count_z.rows());
+    DoubleMatrix Theta_zh(count_z.rows(), count_h.rows());
+    DoubleMatrix Psi_sz(site2id().size(), count_z.rows());
     aggregate(Count_zh, Count_sz, count_h, count_z,
         hyper_params.alpha_zh, hyper_params.beta_zs, Theta_zh, Psi_sz);
     col_normalize(Theta_zh);
@@ -387,7 +379,7 @@ OutPutData MasterWorker::do_manage () {
         stamps[z].resize(0);
     }
 
-    const Eigen::MatrixXd & Dts_ref = Dts();
+    const DoubleMatrix & Dts_ref = Dts();
     size_t Dts_last_col = Dts_ref.cols() - 1;
     for(size_t i = 0; i < trace_topics.rows(); i++) {
         int z = trace_topics(i);
@@ -469,44 +461,4 @@ OutPutData plearn(
     return result;
 }
 
-PYBIND11_MODULE(tribeflowpp, m) {
-    py::class_<OutPutData> (m, "OutPutData")
-        .def(py::init<>())
-        .def_readwrite("n_topics", &OutPutData::n_topics)
-        .def_readwrite("alpha_zh", &OutPutData::alpha_zh)
-        .def_readwrite("alpha_zh", &OutPutData::beta_zs)
-        .def_readwrite("residency_priors", &OutPutData::residency_priors)
-        .def_readwrite("n_iter", &OutPutData::n_iter)
-        .def_readwrite("kernel_name", &OutPutData::kernel_name)
-        .def_readwrite("burn_in", &OutPutData::burn_in)
-        .def_readwrite("Theta_zh", &OutPutData::Theta_zh)
-        .def_readwrite("Psi_sz", &OutPutData::Psi_sz)
-        .def_readwrite("Dts", &OutPutData::Dts)
-        .def_readwrite("Count_zh", &OutPutData::Count_zh)
-        .def_readwrite("Count_sz", &OutPutData::Count_sz)
-        .def_readwrite("count_h", &OutPutData::count_h)
-        .def_readwrite("count_z", &OutPutData::count_z) 
-        .def_readwrite("assign", &OutPutData::assign) 
-        .def_readwrite("hyper2id", &OutPutData::hyper2id) 
-        .def_readwrite("site2id", &OutPutData::site2id) 
-        ;
 
-    m.doc() = R"pbdoc(
-        C++ Re implementation of Tribeflow
-        -----------------------
-        .. currentmodule:: tribeflowpp
-        .. autosummary::
-           :toctree: _generate
-           learn
-    )pbdoc";
-
-    m.def("learn", &plearn, R"pbdoc(
-        pybind parallel learn function
-    )pbdoc");
-
-#ifdef VERSION_INFO
-    m.attr("__version__") = VERSION_INFO;
-#else
-    m.attr("__version__") = "dev";
-#endif
-}

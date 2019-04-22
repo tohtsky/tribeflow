@@ -1,23 +1,24 @@
 #ifndef LEARN_BODY_HPP
 #define LEARN_BODY_HPP
 #include <Eigen/Eigen>
+#include "defs.hpp"
 #include "kernels/base.hpp"
 #include <random>
 
 void fast_populate(
     const Eigen::MatrixXi & Trace,
-    const Eigen::VectorXi & trace_hyper_ids,
-    const Eigen::VectorXi & trace_topics, 
+    const IntegerVector & trace_hyper_ids,
+    const IntegerVector & trace_topics, 
     Eigen::MatrixXi & Count_zh,
     Eigen::MatrixXi & Count_sz,
-    Eigen::VectorXi & count_h,
-    Eigen::VectorXi & count_z);
+    IntegerVector & count_h,
+    IntegerVector & count_z);
 
 void m_step(
     const Eigen::MatrixXd& Dts,
     const Eigen::MatrixXi& Trace,
-    const Eigen::VectorXi& trace_hyper_ids,
-    const Eigen::VectorXi& trace_topics, 
+    const IntegerVector& trace_hyper_ids,
+    const IntegerVector& trace_topics, 
     StampLists& previous_stamps,
     std::unique_ptr<KernelBase> && kernel,
     std::mt19937 & gen
@@ -26,13 +27,13 @@ void m_step(
 void e_step(
     const Eigen::MatrixXd& Dts,
     const Eigen::MatrixXi& Trace,
-    const Eigen::VectorXi& trace_hyper_ids,
-    Eigen::VectorXi& trace_topics, // change
+    const IntegerVector& trace_hyper_ids,
+    IntegerVector& trace_topics, // change
     const StampLists& previous_stamps,
     Eigen::MatrixXi& Count_zh, // change!
     Eigen::MatrixXi& Count_sz, // change
-    Eigen::VectorXi& count_h, //change
-    Eigen::VectorXi& count_z,  //change
+    IntegerVector& count_h, //change
+    IntegerVector& count_z,  //change
     double alpha_zh,
     double beta_zs,
     vector<double> & prob_topics_aux, // change
@@ -51,22 +52,22 @@ inline double dir_posterior(double joint_count, double global_count,
 }
 
 void fast_em(const Eigen::MatrixXd & Dts, const Eigen::MatrixXi & Trace,
-        const Eigen::VectorXi & trace_hyper_ids,
-        Eigen::VectorXi& trace_topics, // change 
+        const IntegerVector & trace_hyper_ids,
+        IntegerVector& trace_topics, // change 
         StampLists & previous_stamps, 
         Eigen::MatrixXi & Count_zh, Eigen::MatrixXi & Count_sz,
-        Eigen::VectorXi & count_h, Eigen::VectorXi & count_z,
+        IntegerVector & count_h, IntegerVector & count_z,
         double alpha_zh, double beta_zs, vector<double> & prob_topics_aux,
         Eigen::MatrixXd & Theta_zh, Eigen::MatrixXd Psi_sz, size_t n_iter,
         size_t burn_in, std::unique_ptr<KernelBase> && kernel,
         std::mt19937 & gen);
 
 void em(const Eigen::MatrixXd & Dts, const Eigen::MatrixXi & Trace,
-        const Eigen::VectorXi & trace_hyper_ids,
-        Eigen::VectorXi& trace_topics, // change 
+        const IntegerVector & trace_hyper_ids,
+        IntegerVector& trace_topics, // change 
         StampLists & previous_stamps, 
         Eigen::MatrixXi & Count_zh, Eigen::MatrixXi & Count_sz,
-        Eigen::VectorXi & count_h, Eigen::VectorXi & count_z,
+        IntegerVector & count_h, IntegerVector & count_z,
         double alpha_zh, double beta_zs, vector<double> & prob_topics_aux,
         Eigen::MatrixXd & Theta_zh, Eigen::MatrixXd Psi_sz, size_t n_iter,
         size_t burn_in, std::unique_ptr<KernelBase> && kernel, std::mt19937 & gen,
@@ -79,12 +80,12 @@ size_t sample(
     double dt,
     const Eigen::MatrixXi& Trace,
     int hyper_id,
-    Eigen::VectorXi& trace_topics, // change
+    IntegerVector& trace_topics, // change
     const StampLists& previous_stamps,
     Eigen::MatrixXi& Count_zh, // change!
     Eigen::MatrixXi& Count_sz, // change
-    Eigen::VectorXi& count_h, //change
-    Eigen::VectorXi& count_z,  //change
+    IntegerVector& count_h, //change
+    IntegerVector& count_z,  //change
     double alpha_zh,
     double beta_zs,
     vector<double> & prob_topics_aux,
@@ -94,8 +95,8 @@ size_t sample(
 void aggregate(
         const Eigen::MatrixXi & Count_zh, 
     const Eigen::MatrixXi & Count_sz, 
-    const Eigen::VectorXi & count_h,
-    const Eigen::VectorXi & count_z,
+    const IntegerVector & count_h,
+    const IntegerVector & count_z,
     double alpha_zh, double beta_zs,
     Eigen::MatrixXd & Theta_zh, 
     Eigen::MatrixXd & Psi_sz); 

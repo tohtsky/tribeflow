@@ -1,5 +1,6 @@
 #ifndef KERNEL_BASE_HPP
 #define KERNEL_BASE_HPP
+#include "../defs.hpp"
 #include "../stamp_lists.hpp"
 #include <vector> 
 #include <string>
