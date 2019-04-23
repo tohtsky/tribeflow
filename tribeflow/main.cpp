@@ -6,7 +6,7 @@ int main () {
     size_t n_workers = 2;
     unsigned n_topics = 50;
     string model_output_path = "model.data";
-    unsigned n_iter = 10;
+    unsigned n_iter = 500;
     unsigned burn_in = 0;
     bool dynamic = false;
     unsigned n_batches = 10;

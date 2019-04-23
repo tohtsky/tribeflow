@@ -26,7 +26,8 @@ enum class SlaveStatus {
     PAIRED,
     LEARN,
     SENDRESULTS,
-    STOP
+    STOP,
+    MISC
 };
 
 
@@ -85,6 +86,7 @@ struct MasterWorker {
             void learn();
             void send_message_to_master(SlaveStatus status_code);
             void sample();
+            void print(const std::string &);
             SlaveStatus receive_message_from_master();
             bool paired_update(
                 Eigen::MatrixXi & Count_sz, 
@@ -109,6 +111,7 @@ struct MasterWorker {
     void create_slaves();
     OutPutData do_manage();
     void add_message(MasterMessage message);
+    void print_with_lock(size_t worker_id, const string & message);
     inline const map<string, int> & hyper2id () const{
         return std::get<HYPER2ID>(input_data);
     }

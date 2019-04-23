@@ -3,7 +3,9 @@
 #include "plearn.hpp"
 #include "learn_body.hpp"
 #include "kernels/base.hpp"
+#include "debug.hpp"
 
+constexpr size_t PRINT_FREQ = 50;
 
 constexpr size_t CACHE_SIZE = 1;
 MasterWorker::Slave::Slave(MasterWorker* parent, size_t id) :
@@ -108,6 +110,9 @@ void MasterWorker::Slave::learn () {
     DoubleMatrix Psi_sz = DoubleMatrix::Zero(ns, nz);
     bool can_pair = true;
     for (size_t i = 0; i < (parent_->hyper_params.n_iter / CACHE_SIZE) ; i++) {
+        if ( i > 0 && (i % PRINT_FREQ == 0) ){ 
+            this->print(str_concat("Current iteration: ", i));
+        }
         Count_sz_sum = Count_sz + Count_sz_others;
         count_z = Count_sz_sum.colwise().sum().transpose();
         // em
@@ -189,6 +194,10 @@ void MasterWorker::Slave::main_job () {
 void MasterWorker::Slave::send_message_to_master (SlaveStatus status_code) {
     this->parent_->add_message(MasterMessage{this->my_id, status_code});
 };
+
+void MasterWorker::Slave::print(const std::string & message) {
+    this->parent_->print_with_lock(this->my_id, message);
+}
 
 void MasterWorker::Slave::sample() {
     //bool can_pair = true;
@@ -418,6 +427,12 @@ void MasterWorker::add_message (MasterMessage message ) {
     std::unique_lock<std::mutex> lock(this->message_add_mutex);
     this->messages_from_slaves.push(message);
     this->condition.notify_one();
+}
+
+void MasterWorker::print_with_lock(size_t worker_id, const string & message) {
+    std::unique_lock<std::mutex> lock(this->message_add_mutex);
+    cout << "Worker[" << worker_id << "] says:" << endl;
+    cout << message << endl;
 }
 
 MasterMessage MasterWorker::receive_message() {
