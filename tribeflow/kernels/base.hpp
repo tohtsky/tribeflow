@@ -11,8 +11,8 @@ struct KernelBase {
     virtual double pdf(double x, int z, const StampLists & stamps) = 0;
     virtual void m_step(const StampLists & stamps) = 0; 
     virtual void build(size_t n_trace, size_t nz, vector<double> priors) = 0;
-    virtual Eigen::MatrixXd get_state() = 0;
-    virtual void update_state(const Eigen::MatrixXd & P) = 0;
+    virtual DoubleMatrix get_state() = 0;
+    virtual void update_state(const DoubleMatrix & P) = 0;
     inline virtual ~KernelBase() {}
 };
 
@@ -21,10 +21,10 @@ struct NoopKernel: KernelBase {
     virtual double pdf(double x, int z, const StampLists & stamps) override;
     virtual void m_step(const StampLists & stamps) override; 
     virtual void build(size_t n_trace, size_t nz, vector<double> priors) override;
-    virtual Eigen::MatrixXd get_state() override;
-    virtual void update_state(const Eigen::MatrixXd & P) override;
+    virtual DoubleMatrix get_state() override;
+    virtual void update_state(const DoubleMatrix & P) override;
     private:
-    Eigen::MatrixXd P;
+    DoubleMatrix P;
     vector<double> priors;
 };
 

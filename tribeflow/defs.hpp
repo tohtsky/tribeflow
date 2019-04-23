@@ -7,8 +7,8 @@
 //using namespace Eigen;
 using namespace std;
 
-using DoubleMatrix = Eigen::MatrixXd;
-using IntegerMatrix = Eigen::MatrixXi;
+using DoubleMatrix = Eigen::Matrix<double, -1, -1, Eigen::RowMajor>;
+using IntegerMatrix = Eigen::Matrix<int32_t, -1, -1, Eigen::RowMajor>;
 using IntegerVector = Eigen::VectorXi;
 
 //using IntegerVector = Eigen::Matrix<int32_t, -1, Eigen::Dynamic>;
@@ -41,13 +41,13 @@ struct HyperParams {
 };
 
 using InputData = std::tuple<
-    Eigen::MatrixXd, //Dts_mat
-    Eigen::MatrixXi, // Trace_mat
+    DoubleMatrix, //Dts_mat
+    IntegerMatrix, // Trace_mat
     vector<size_t>, // trace_hyper_ids
     IntegerVector, // trace_topics
     StampLists, //stamp_lists
-    Eigen::MatrixXi, // Count_zh
-    Eigen::MatrixXi, // Count_sz
+    IntegerMatrix, // Count_zh
+    IntegerMatrix, // Count_sz
     map<string, int>, // hyper2id
     map<string, int> //site2id
 >;
@@ -59,12 +59,12 @@ struct OutPutData {
     vector<double> residency_priors; 
     size_t n_iter;
     size_t burn_in;
-    Eigen::MatrixXd Dts;
-    Eigen::MatrixXi Count_zh, Count_sz;
+    DoubleMatrix Dts;
+    IntegerMatrix Count_zh, Count_sz;
     IntegerVector count_h, count_z;
-    Eigen::MatrixXd Theta_zh, Psi_sz; 
+    DoubleMatrix Theta_zh, Psi_sz; 
     string kernel_name;
-    Eigen::MatrixXd P;
+    DoubleMatrix P;
     IntegerVector assign;
     map<string, int> hyper2id, site2id;
 };

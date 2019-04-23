@@ -6,17 +6,17 @@
 #include <random>
 
 void fast_populate(
-    const Eigen::MatrixXi & Trace,
+    const IntegerMatrix & Trace,
     const vector<size_t> & trace_hyper_ids,
     const IntegerVector & trace_topics, 
-    Eigen::MatrixXi & Count_zh,
-    Eigen::MatrixXi & Count_sz,
+    IntegerMatrix & Count_zh,
+    IntegerMatrix & Count_sz,
     IntegerVector & count_h,
     IntegerVector & count_z);
 
 void m_step(
-    const Eigen::MatrixXd& Dts,
-    const Eigen::MatrixXi& Trace,
+    const DoubleMatrix& Dts,
+    const IntegerMatrix& Trace,
     const vector<size_t>& trace_hyper_ids,
     const IntegerVector& trace_topics, 
     StampLists& previous_stamps,
@@ -25,13 +25,13 @@ void m_step(
 );
 
 void e_step(
-    const Eigen::MatrixXd& Dts,
-    const Eigen::MatrixXi& Trace,
+    const DoubleMatrix& Dts,
+    const IntegerMatrix& Trace,
     const vector<size_t>& trace_hyper_ids,
     IntegerVector& trace_topics, // change
     const StampLists& previous_stamps,
-    Eigen::MatrixXi& Count_zh, // change!
-    Eigen::MatrixXi& Count_sz, // change
+    IntegerMatrix& Count_zh, // change!
+    IntegerMatrix& Count_sz, // change
     IntegerVector& count_h, //change
     IntegerVector& count_z,  //change
     double alpha_zh,
@@ -48,39 +48,39 @@ inline double dir_posterior(double joint_count, double global_count,
     return numerator / denominator;
 }
 
-void fast_em(const Eigen::MatrixXd & Dts, const Eigen::MatrixXi & Trace,
+void fast_em(const DoubleMatrix & Dts, const IntegerMatrix & Trace,
         const vector<size_t> & trace_hyper_ids,
         IntegerVector& trace_topics, // change 
         StampLists & previous_stamps, 
-        Eigen::MatrixXi & Count_zh, Eigen::MatrixXi & Count_sz,
+        IntegerMatrix & Count_zh, IntegerMatrix & Count_sz,
         IntegerVector & count_h, IntegerVector & count_z,
         double alpha_zh, double beta_zs, vector<double> & prob_topics_aux,
-        Eigen::MatrixXd & Theta_zh, Eigen::MatrixXd Psi_sz, size_t n_iter,
+        DoubleMatrix & Theta_zh, DoubleMatrix Psi_sz, size_t n_iter,
         size_t burn_in, std::unique_ptr<KernelBase> && kernel,
         std::mt19937 & gen);
 
-void em(const Eigen::MatrixXd & Dts, const Eigen::MatrixXi & Trace,
+void em(const DoubleMatrix & Dts, const IntegerMatrix & Trace,
         const vector<size_t> & trace_hyper_ids,
         IntegerVector& trace_topics, // change 
         StampLists & previous_stamps, 
-        Eigen::MatrixXi & Count_zh, Eigen::MatrixXi & Count_sz,
+        IntegerMatrix & Count_zh, IntegerMatrix & Count_sz,
         IntegerVector & count_h, IntegerVector & count_z,
         double alpha_zh, double beta_zs, vector<double> & prob_topics_aux,
-        Eigen::MatrixXd & Theta_zh, Eigen::MatrixXd Psi_sz, size_t n_iter,
+        DoubleMatrix & Theta_zh, DoubleMatrix Psi_sz, size_t n_iter,
         size_t burn_in, std::unique_ptr<KernelBase> && kernel, std::mt19937 & gen,
         bool average_and_normalize=true);
 
-void col_normalize(Eigen::MatrixXd & target);
+void col_normalize(DoubleMatrix & target);
 
 size_t sample(
     size_t i,
     double dt,
-    const Eigen::MatrixXi& Trace,
+    const IntegerMatrix& Trace,
     int hyper_id,
     IntegerVector& trace_topics, // change
     const StampLists& previous_stamps,
-    Eigen::MatrixXi& Count_zh, // change!
-    Eigen::MatrixXi& Count_sz, // change
+    IntegerMatrix& Count_zh, // change!
+    IntegerMatrix& Count_sz, // change
     IntegerVector& count_h, //change
     IntegerVector& count_z,  //change
     double alpha_zh,
@@ -90,12 +90,12 @@ size_t sample(
     std::mt19937 & gen);
 
 void aggregate(
-        const Eigen::MatrixXi & Count_zh, 
-    const Eigen::MatrixXi & Count_sz, 
+        const IntegerMatrix & Count_zh, 
+    const IntegerMatrix & Count_sz, 
     const IntegerVector & count_h,
     const IntegerVector & count_z,
     double alpha_zh, double beta_zs,
-    Eigen::MatrixXd & Theta_zh, 
-    Eigen::MatrixXd & Psi_sz); 
+    DoubleMatrix & Theta_zh, 
+    DoubleMatrix & Psi_sz); 
 
 #endif

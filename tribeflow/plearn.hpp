@@ -36,26 +36,26 @@ using MasterMessage = std::tuple<int, SlaveStatus>;
 struct ResultData{
     inline ResultData(
         const IntegerVector & trace_topics,
-        const Eigen::MatrixXi & Count_zh,
-        const Eigen::MatrixXi & Count_sz,
+        const IntegerMatrix & Count_zh,
+        const IntegerMatrix & Count_sz,
         const IntegerVector & count_h,
         const IntegerVector & count_z,
-        const Eigen::MatrixXd & P):
+        const DoubleMatrix & P):
         trace_topics(trace_topics), Count_zh(Count_zh), Count_sz(Count_sz),
         count_h(count_h), count_z(count_z), P(P) {} 
     inline ResultData() {}
     ResultData(const ResultData &) = default;
     ResultData & operator = (const ResultData &) = default;
     IntegerVector trace_topics;
-    Eigen::MatrixXi Count_zh;
-    Eigen::MatrixXi Count_sz;
+    IntegerMatrix Count_zh;
+    IntegerMatrix Count_sz;
     IntegerVector count_h;
     IntegerVector count_z;
-    Eigen::MatrixXd P;
+    DoubleMatrix P;
 };
 
 // Count_sz and P
-using InterThreadData = std::tuple<Eigen::MatrixXi, Eigen::MatrixXd>; 
+using InterThreadData = std::tuple<IntegerMatrix, DoubleMatrix>; 
 
 struct MasterWorker {
     struct Slave {
@@ -89,18 +89,18 @@ struct MasterWorker {
             void print(const std::string &);
             SlaveStatus receive_message_from_master();
             bool paired_update(
-                Eigen::MatrixXi & Count_sz, 
-                Eigen::MatrixXi & Count_sz_others, 
-                Eigen::MatrixXd & P_local
+                IntegerMatrix & Count_sz, 
+                IntegerMatrix & Count_sz_others, 
+                DoubleMatrix & P_local
             );
 
             optional<std::thread> working_thread;
-            Eigen::MatrixXi* send_data_count;
-            Eigen::MatrixXd* send_data_p; 
+            IntegerMatrix* send_data_count;
+            DoubleMatrix* send_data_p; 
             optional<InterThreadData> received_data;
             optional<size_t> pair_id_;
             optional<SlaveStatus> message_from_master;
-            map<size_t, Eigen::MatrixXi> previous_encounters_s;
+            map<size_t, IntegerMatrix> previous_encounters_s;
         public:
             optional<ResultData> result; 
     };
@@ -119,16 +119,16 @@ struct MasterWorker {
         return std::get<SITE2ID>(input_data);
     }
 
-    inline const Eigen::MatrixXd Dts () const {
+    inline const DoubleMatrix Dts () const {
         return std::get<DTS>(input_data);
     }
-    inline const Eigen::MatrixXi Trace () const{
+    inline const IntegerMatrix Trace () const{
         return std::get<TRACE>(input_data);
     }
-    inline const Eigen::MatrixXi & Count_zh () const {
+    inline const IntegerMatrix & Count_zh () const {
         return std::get<COUNT_ZH>(input_data);
     }
-    inline const Eigen::MatrixXi & Count_sz () const {
+    inline const IntegerMatrix & Count_sz () const {
         return std::get<COUNT_SZ>(input_data);
     } 
     inline const vector<size_t> & trace_hyper_ids () const { 
@@ -147,7 +147,7 @@ struct MasterWorker {
         return workloads_;
     }
 
-    Eigen::MatrixXd P () {
+    DoubleMatrix P () {
         return kernel_->get_state();
     }
 
