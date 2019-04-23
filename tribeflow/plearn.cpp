@@ -163,9 +163,6 @@ bool MasterWorker::Slave::paired_update(
 
     const IntegerMatrix & Count_sz_pair = std::get<0>(*received_data);
     const DoubleMatrix & P_pair = std::get<1>(*received_data);
-    if (my_id==0) {
-        cout << "pair : " << Count_sz_pair.block(0, 0, 10, 10) << endl;
-    }
 
     Count_sz_others += Count_sz_pair;
     Count_sz_others -= this->previous_encounters_s.at(*pair_id_);
