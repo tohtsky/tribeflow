@@ -44,7 +44,7 @@ void e_step(
 
 inline double dir_posterior(double joint_count, double global_count, 
         double num_occurences, double smooth) { 
-    double numerator = smooth + joint_count;
+    double numerator = joint_count + smooth ;
     double denominator = global_count + smooth * num_occurences;
     if (denominator == 0) return 0;
     return numerator / denominator;
@@ -108,5 +108,28 @@ void aggregate(
     double alpha_zh, double beta_zs,
     DoubleMatrix & Theta_zh, 
     DoubleMatrix & Psi_sz); 
+
+inline int binary_search(const vector<double> & array, double value) {
+    int lower = 0, upper = array.size() -1; // closed interval
+    int half = 0;
+    int idx = -1;
+    while (upper >= lower){
+        half = lower + (upper - lower) / 2;
+        double trial = array[half];
+        if (value == trial) {
+            idx = half;
+            break;
+        }
+        else if ( value > trial ) {
+            lower = half + 1;
+        } else {
+            upper = half - 1;
+        }
+    }
+    if (idx == - 1) // Element not found, return where it should be
+        return lower;
+    return idx;
+}
+
 
 #endif

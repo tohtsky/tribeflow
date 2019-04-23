@@ -1,5 +1,6 @@
 #include<iostream>
 #include"learn_body.hpp"
+#include"debug.hpp"
 
 void fast_populate(
     const IntegerMatrix & Trace,
@@ -67,8 +68,8 @@ void e_step(
 
         for (size_t j = 0; j < n_trace_cols; j++) {
             int site = Trace(i, j);
-            Count_sz(site, topic_new) ++; 
-            count_z(topic_new) ++; 
+            Count_sz(site, topic_new)++; 
+            count_z(topic_new)++; 
         }
     }
 }
@@ -200,26 +201,35 @@ size_t sample(
     int prev;
     int site;
     double prev_prob;
-
     size_t n_trace_cols = Trace.cols(); 
+    site = Trace(i,0); 
     for (size_t z = 0; z < nz; z++ ) {
-        site = Trace(i, 0);
-        prob_topics_aux[z] = kernel->pdf(dt, z, previous_stamps) * 
-            dir_posterior(Count_zh(z, hyper_id), count_h(hyper_id), nz, alpha_zh) *
-            dir_posterior(Count_sz(site, z), count_z(z), ns, beta_zs);
-        for(size_t j = 1; j < n_trace_cols; j++ ) {
-            site = Trace(i, j);
-            prev = Trace(i, j - 1);
-            prev_prob = dir_posterior(Count_sz(prev, z), count_z(z), ns, beta_zs);
-            prob_topics_aux[z] = prob_topics_aux[z] * 
-                dir_posterior(Count_sz(site, z), count_z(z), ns, beta_zs ) /
-                (1 - prev_prob); 
-        } 
+        prob_topics_aux[z] = kernel->pdf(dt, z, previous_stamps);
     }
+    Eigen::Map<Eigen::ArrayXd> prob_map(prob_topics_aux.data(), prob_topics_aux.size());
+
+    prob_map *= ((Count_zh.col(hyper_id).array().cast<double>() + alpha_zh ) / ( count_h(hyper_id) + nz * alpha_zh));
+    prob_map *= ((Count_sz.row(site).transpose().array().cast<double>() + beta_zs ) / (count_z.array().cast<double>() + ns * beta_zs));
+    for(size_t j = 1; j < n_trace_cols; j++ ) {
+        site = Trace(i, j);
+        prev = Trace(i, j - 1);
+        prob_map *= ((Count_sz.row(site).transpose().array().cast<double>() + beta_zs ) / (count_z.array().cast<double>() + ns * beta_zs));
+        prob_map /= (1 - (Count_sz.row(prev).transpose().array().cast<double>() + beta_zs ) / (count_z.array().cast<double>() + ns * beta_zs));
+    }
+#if 1
+    for (size_t i = 1; i < prob_topics_aux.size(); i++) {
+        prob_topics_aux[i] += prob_topics_aux[i-1];
+    }
+    std::uniform_real_distribution<> dist(0.0, 1.0); 
+    double r = dist(gen) * prob_topics_aux.back();
+    return binary_search(prob_topics_aux, r);
+
+#else
     return std::discrete_distribution(
         prob_topics_aux.begin(), 
         prob_topics_aux.end()
-    )(gen);
+    )(gen); 
+#endif
 }
 
 

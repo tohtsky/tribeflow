@@ -1,12 +1,14 @@
 #include "plearn.hpp"
 #include "dataio.hpp"
+#include "debug.hpp"
+#include "learn_body.hpp"
 
 int main () {
     string trace_fpath = "/Users/tomoki.otsuki/src/tribeflow/tribeflow/test_data/sampled_trace.data";
-    size_t n_workers = 2;
+    size_t n_workers = 1;
     unsigned n_topics = 20;
     string model_output_path = "model.data";
-    unsigned n_iter = 500;
+    unsigned n_iter = 2000;
     unsigned burn_in = 0;
     bool dynamic = false;
     unsigned n_batches = 10;
@@ -26,5 +28,4 @@ int main () {
     ));
     worker.create_slaves();
     OutPutData result = worker.do_manage();
-    cout << result.Psi_sz << endl;
 }
