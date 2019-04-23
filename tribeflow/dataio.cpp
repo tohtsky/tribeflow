@@ -33,7 +33,7 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
 
     vector<vector<double>> Dts;
     vector<vector<int>> Trace;
-    vector<int> trace_hyper_ids_vec, trace_topics_vec;
+    vector<int> trace_hyper_ids_unsorted, trace_topics_vec;
 
     size_t i = 0;
     size_t l_in_file = 1;
@@ -105,7 +105,7 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
             count_z_dict[z] += 1;
         }
         //line_visits_ids.push_back(z);
-        trace_hyper_ids_vec.push_back(h);
+        trace_hyper_ids_unsorted.push_back(h);
         trace_topics_vec.push_back(z);
         Trace.push_back(line_visits_ids);
 
@@ -124,12 +124,12 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
     //vector_print(argsort_indices) ;
     DoubleMatrix Dts_mat(argsort_indices.size(), *mem_size_lazy);
     IntegerMatrix Trace_mat(argsort_indices.size(), *mem_size_lazy + 1);
-    IntegerVector trace_hyper_ids(trace_hyper_ids_vec.size());
+    vector<size_t> trace_hyper_ids(trace_hyper_ids_unsorted.size());
     IntegerVector trace_topics(trace_topics_vec.size());
 
     for (size_t i = 0; i < argsort_indices.size(); i++) {
         auto ind = argsort_indices[i];
-        trace_hyper_ids(i) = trace_hyper_ids_vec[ind];
+        trace_hyper_ids[i] = trace_hyper_ids_unsorted[ind];
         trace_topics(i) = trace_topics_vec.at(ind);
         for (size_t j = 0; j < *mem_size_lazy; j++ ) {
             Dts_mat(i, j) = Dts[ind][j];

@@ -3,7 +3,7 @@
 
 void fast_populate(
     const IntegerMatrix & Trace,
-    const IntegerVector & trace_hyper_ids,
+    const vector<size_t> & trace_hyper_ids,
     const IntegerVector & trace_topics, 
     IntegerMatrix & Count_zh,
     IntegerMatrix & Count_sz,
@@ -12,7 +12,7 @@ void fast_populate(
     size_t n_trace = Trace.rows();
     size_t trace_col = Trace.cols();
     for (size_t i = 0; i < n_trace; i++) {
-        int h = trace_hyper_ids(i);
+        int h = trace_hyper_ids[i];
         int z = trace_topics(i);
         Count_zh(z, h)++;
         count_h(h)++;
@@ -20,20 +20,20 @@ void fast_populate(
             int s = Trace(i, j);
             Count_sz(s, z)++;
         }
-        count_z(z) += Trace.cols(); 
+        count_z(z) += trace_col; 
     }
 }
 
 void e_step(
     const DoubleMatrix& Dts,
     const IntegerMatrix& Trace,
-    const IntegerVector& trace_hyper_ids,
-    IntegerVector& trace_topics, // change
+    const vector<size_t>& trace_hyper_ids,
+    IntegerVector& trace_topics, 
     const StampLists& previous_stamps,
-    IntegerMatrix& Count_zh, // change!
-    IntegerMatrix& Count_sz, // change
-    IntegerVector& count_h, //change
-    IntegerVector& count_z,  //change
+    IntegerMatrix& Count_zh,
+    IntegerMatrix& Count_sz,
+    IntegerVector& count_h,
+    IntegerVector& count_z,
     double alpha_zh,
     double beta_zs,
     vector<double>& prob_topics_aux,
@@ -41,41 +41,42 @@ void e_step(
     std::mt19937 & gen) {
 
     size_t mem_size = Dts.cols();
+    size_t n_trace_cols = Trace.cols();
     size_t n_trace = Trace.rows();
 
-    size_t Dt_last_col = Dts.cols() - 1;
+    size_t Dt_last_col = mem_size - 1;
     for (size_t i = 0; i < n_trace; i++ ) {
         double dt = Dts(i,  Dt_last_col);
-        int hyper_iid = trace_hyper_ids(i);
+        int hyper_iid = trace_hyper_ids[i];
         int topic_old = trace_topics(i);
         Count_zh(topic_old, hyper_iid)--;
         count_h(hyper_iid) --;
-        count_z(topic_old) -= (mem_size + 1); 
-        for (size_t j = 0; j < (mem_size + 1); j++) { 
+        for (size_t j = 0; j < n_trace_cols; j++) { 
             int s = Trace(i, j);
             Count_sz(s, topic_old)--;
+            count_z(topic_old) --;
         }
         size_t new_topic = sample(i, dt, Trace, hyper_iid,
                 trace_topics, previous_stamps, Count_zh,
             Count_sz, count_h, count_z, alpha_zh, beta_zs,
             prob_topics_aux, std::move(kernel), gen);
-        //cout << "new topic is " << new_topic << endl;
+
         trace_topics(i) = new_topic;
         Count_zh(new_topic, hyper_iid) ++;
         count_h(hyper_iid) ++;
 
-        for (size_t j = 0; j < (mem_size + 1); j++) {
+        for (size_t j = 0; j < n_trace_cols; j++) {
             int site = Trace(i, j);
-            Count_sz(site, new_topic) += 1; 
+            Count_sz(site, new_topic) ++; 
+            count_z(new_topic) ++; 
         }
-        count_z(new_topic) += (mem_size + 1); 
     }
 }
 
 void m_step(
     const DoubleMatrix& Dts,
     const IntegerMatrix& Trace,
-    const IntegerVector& trace_hyper_ids,
+    const vector<size_t>& trace_hyper_ids,
     const IntegerVector& trace_topics, 
     StampLists& previous_stamps,
     std::unique_ptr<KernelBase> && kernel,
@@ -117,7 +118,7 @@ inline void aggregate(
 }
 
 void fast_em(const DoubleMatrix & Dts, const IntegerMatrix & Trace,
-        const IntegerVector & trace_hyper_ids,
+        const vector<size_t> & trace_hyper_ids,
         IntegerVector& trace_topics, // change 
         StampLists & previous_stamps, 
         IntegerMatrix & Count_zh, IntegerMatrix & Count_sz,
@@ -148,7 +149,7 @@ void col_normalize(DoubleMatrix & target) {
 }
 
 void em(const DoubleMatrix & Dts, const IntegerMatrix & Trace,
-        const IntegerVector & trace_hyper_ids,
+        const vector<size_t> & trace_hyper_ids,
         IntegerVector& trace_topics, // change 
         StampLists & previous_stamps, 
         IntegerMatrix & Count_zh, IntegerMatrix & Count_sz,
@@ -200,13 +201,13 @@ size_t sample(
     int site;
     double prev_prob;
 
-    size_t trace_cols = Trace.cols(); 
+    size_t n_trace_cols = Trace.cols(); 
     for (size_t z = 0; z < nz; z++ ) {
         site = Trace(i, 0);
         prob_topics_aux[z] = kernel->pdf(dt, z, previous_stamps) * 
             dir_posterior(Count_zh(z, hyper_id), count_h(hyper_id), nz, alpha_zh) *
             dir_posterior(Count_sz(site, z), count_z(z), ns, beta_zs);
-        for(size_t j = 1; j < trace_cols; j++ ) {
+        for(size_t j = 1; j < n_trace_cols; j++ ) {
             site = Trace(i, j);
             prev = Trace(i, j - 1);
             prev_prob = dir_posterior(Count_sz(prev, z), count_z(z), ns, beta_zs);

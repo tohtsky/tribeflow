@@ -2,11 +2,11 @@
 #include "dataio.hpp"
 
 int main () {
-    string trace_fpath = "/Users/tomoki.otsuki/src/tribeflow/trace.data";
-    size_t n_workers = 8;
+    string trace_fpath = "/Users/tomoki.otsuki/src/tribeflow/tribeflow/test_data/sampled_trace.data";
+    size_t n_workers = 2;
     unsigned n_topics = 50;
     string model_output_path = "model.data";
-    unsigned n_iter = 1000;
+    unsigned n_iter = 10;
     unsigned burn_in = 0;
     bool dynamic = false;
     unsigned n_batches = 10;
@@ -26,5 +26,5 @@ int main () {
     ));
     worker.create_slaves();
     OutPutData result = worker.do_manage();
-    cout << result.Theta_zh << endl;
+    //cout << result.Theta_zh << endl;
 }

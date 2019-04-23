@@ -43,7 +43,7 @@ struct HyperParams {
 using InputData = std::tuple<
     Eigen::MatrixXd, //Dts_mat
     Eigen::MatrixXi, // Trace_mat
-    IntegerVector, // trace_hyper_ids
+    vector<size_t>, // trace_hyper_ids
     IntegerVector, // trace_topics
     StampLists, //stamp_lists
     Eigen::MatrixXi, // Count_zh

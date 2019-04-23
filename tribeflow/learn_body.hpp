@@ -7,7 +7,7 @@
 
 void fast_populate(
     const Eigen::MatrixXi & Trace,
-    const IntegerVector & trace_hyper_ids,
+    const vector<size_t> & trace_hyper_ids,
     const IntegerVector & trace_topics, 
     Eigen::MatrixXi & Count_zh,
     Eigen::MatrixXi & Count_sz,
@@ -17,7 +17,7 @@ void fast_populate(
 void m_step(
     const Eigen::MatrixXd& Dts,
     const Eigen::MatrixXi& Trace,
-    const IntegerVector& trace_hyper_ids,
+    const vector<size_t>& trace_hyper_ids,
     const IntegerVector& trace_topics, 
     StampLists& previous_stamps,
     std::unique_ptr<KernelBase> && kernel,
@@ -27,7 +27,7 @@ void m_step(
 void e_step(
     const Eigen::MatrixXd& Dts,
     const Eigen::MatrixXi& Trace,
-    const IntegerVector& trace_hyper_ids,
+    const vector<size_t>& trace_hyper_ids,
     IntegerVector& trace_topics, // change
     const StampLists& previous_stamps,
     Eigen::MatrixXi& Count_zh, // change!
@@ -49,7 +49,7 @@ inline double dir_posterior(double joint_count, double global_count,
 }
 
 void fast_em(const Eigen::MatrixXd & Dts, const Eigen::MatrixXi & Trace,
-        const IntegerVector & trace_hyper_ids,
+        const vector<size_t> & trace_hyper_ids,
         IntegerVector& trace_topics, // change 
         StampLists & previous_stamps, 
         Eigen::MatrixXi & Count_zh, Eigen::MatrixXi & Count_sz,
@@ -60,7 +60,7 @@ void fast_em(const Eigen::MatrixXd & Dts, const Eigen::MatrixXi & Trace,
         std::mt19937 & gen);
 
 void em(const Eigen::MatrixXd & Dts, const Eigen::MatrixXi & Trace,
-        const IntegerVector & trace_hyper_ids,
+        const vector<size_t> & trace_hyper_ids,
         IntegerVector& trace_topics, // change 
         StampLists & previous_stamps, 
         Eigen::MatrixXi & Count_zh, Eigen::MatrixXi & Count_sz,

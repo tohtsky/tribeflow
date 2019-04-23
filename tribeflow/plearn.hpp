@@ -128,7 +128,7 @@ struct MasterWorker {
     inline const Eigen::MatrixXi & Count_sz () const {
         return std::get<COUNT_SZ>(input_data);
     } 
-    inline const IntegerVector & trace_hyper_ids () const { 
+    inline const vector<size_t> & trace_hyper_ids () const { 
         return std::get<TRACE_HYPER>(this->input_data);
     }
 

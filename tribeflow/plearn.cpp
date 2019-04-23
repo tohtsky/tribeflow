@@ -34,21 +34,21 @@ void MasterWorker::Slave::learn () {
 
     const DoubleMatrix & Dts_ref = this->parent_->Dts();
     const IntegerMatrix & Trace_ref = this->parent_->Trace();
-    const IntegerVector & trace_hyper_ids_ref = this->parent_->trace_hyper_ids();
+    const vector<size_t> & trace_hyper_ids_ref = this->parent_->trace_hyper_ids();
     const IntegerMatrix & trace_topics_ref = this->parent_->trace_topics(); 
 
     auto kernel = kernel_factory(this->parent_->hyper_params.kernel_name);
 
     DoubleMatrix Dts(relevant_trace_ind.size(), Dts_ref.cols()); 
     IntegerMatrix Trace(relevant_trace_ind.size(), Trace_ref.cols());
-    IntegerVector trace_hyper_ids(relevant_trace_ind.size());
+    vector<size_t> trace_hyper_ids(relevant_trace_ind.size());
     IntegerVector trace_topics(relevant_trace_ind.size()); 
 
     for(size_t i = 0; i < relevant_trace_ind.size(); i++) {
         size_t orig_ind = relevant_trace_ind[i];
         Dts.row(i) =  Dts_ref.row(orig_ind);
         Trace.row(i) = Trace_ref.row(orig_ind); 
-        trace_hyper_ids(i) = trace_hyper_ids_ref(orig_ind);
+        trace_hyper_ids[i] = trace_hyper_ids_ref[orig_ind];
         trace_topics(i) = trace_topics_ref(orig_ind);
     }
 
@@ -76,11 +76,12 @@ void MasterWorker::Slave::learn () {
     IntegerMatrix Count_sz = IntegerMatrix::Zero(ns, nz);
     IntegerVector count_h = IntegerVector::Zero(nh);
     IntegerVector count_z = IntegerVector::Zero(nz);
+
     fast_populate(
-        this->parent_->Trace(), this->parent_->trace_hyper_ids(),
-        this->parent_->trace_topics(),
+        Trace, trace_hyper_ids, trace_topics,
         Count_zh, Count_sz, count_h, count_z
     );
+
 
     // sample function in plearn.py in original Python version.
 
@@ -246,10 +247,10 @@ void MasterWorker::create_slaves () {
         size_t slave_id = i % this->n_slaves_;
         hyper_to_slave_id[hyper_ids[i]] = slave_id;
     }
-    //vector<vector<int>> workloads(n_slaves_);
-    //IntegerMatrix workloads = IntegerMatrix::Zero(n_slaves_, n_paths);
+
+    const vector<size_t> trace_hyper_ids_ref = trace_hyper_ids();
     for (size_t i = 0; i < n_paths; i++) {
-        int h = (trace_hyper_ids())(i);
+        int h = trace_hyper_ids_ref[i];
         size_t slave_id = hyper_to_slave_id[h];
         workloads_[slave_id].push_back(i);
     }
