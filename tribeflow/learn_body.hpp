@@ -5,6 +5,8 @@
 #include "kernels/base.hpp"
 #include <random>
 
+constexpr double REGULATOR = 1e-10;
+
 void fast_populate(
     const IntegerMatrix & Trace,
     const vector<size_t> & trace_hyper_ids,
@@ -46,6 +48,15 @@ inline double dir_posterior(double joint_count, double global_count,
     double denominator = global_count + smooth * num_occurences;
     if (denominator == 0) return 0;
     return numerator / denominator;
+}
+
+inline Eigen::ArrayXd dir_posterior(
+        const IntegerVector & joint_count, 
+        const IntegerVector & global_count, 
+        double num_occurences, double smooth) { 
+    DoubleVector num =  (joint_count.cast<double>().array() + smooth);
+    DoubleVector denom = (global_count.cast<double>().array() + smooth * num_occurences + REGULATOR);
+    return num.array() / denom.array();
 }
 
 void fast_em(const DoubleMatrix & Dts, const IntegerMatrix & Trace,

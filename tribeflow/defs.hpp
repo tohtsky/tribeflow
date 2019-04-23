@@ -9,7 +9,9 @@ using namespace std;
 
 using DoubleMatrix = Eigen::Matrix<double, -1, -1, Eigen::RowMajor>;
 using IntegerMatrix = Eigen::Matrix<int32_t, -1, -1, Eigen::RowMajor>;
+using DoubleVector = Eigen::VectorXd;
 using IntegerVector = Eigen::VectorXi;
+
 
 //using IntegerVector = Eigen::Matrix<int32_t, -1, Eigen::Dynamic>;
 //using IntegerMatrix = Eigen::Matrix<int32_t, -1, -1, Eigen::Dynamic>;
