@@ -62,12 +62,12 @@ void MasterWorker::Slave::learn () {
 
 
     std::mt19937 gen(this->parent_->hyper_params.random_seed + my_id);
-    double alpha_zh = this->parent_->hyper_params.alpha_zh;
-    double beta_zs = this->parent_->hyper_params.beta_zs;
+    const double alpha_zh = this->parent_->hyper_params.alpha_zh;
+    const double beta_zs = this->parent_->hyper_params.beta_zs;
 
-    int nz = this->parent_->Count_zh().rows();
-    int nh = this->parent_->hyper2id().size();
-    int ns = this->parent_->site2id().size();
+    const int nz = this->parent_->Count_zh().rows();
+    const int nh = this->parent_->hyper2id().size();
+    const int ns = this->parent_->site2id().size();
     int mem_size = this->parent_->Dts().cols();
     if (mem_size <=0) {
         throw std::runtime_error("mem_size <=0 somehow ");
@@ -110,13 +110,12 @@ void MasterWorker::Slave::learn () {
         Count_sz_sum = Count_sz + Count_sz_others;
         count_z = Count_sz_sum.colwise().sum().transpose();
         // em
-        // e_step will be replaced byem;
         em(
             Dts, Trace, trace_hyper_ids, trace_topics,
             stamps, Count_zh, Count_sz, count_h, count_z,
             alpha_zh, beta_zs, prob_topics_aux,
             Theta_zh, Psi_sz, CACHE_SIZE, 0,  std::move(kernel), 
-            gen
+            gen, false
         );
 
         // update local counts
@@ -124,10 +123,13 @@ void MasterWorker::Slave::learn () {
         count_z = Count_sz.colwise().sum().transpose(); 
 
         // Update expected belief of other processors 
-        send_data_count = & Count_sz;
-        send_data_p = & P;
-        can_pair = paired_update(Count_sz, Count_sz_others, P);
-        kernel->update_state(P);
+        if (can_pair) {
+            P = kernel-> get_state();
+            send_data_count = & Count_sz;
+            send_data_p = & P;
+            can_pair = paired_update(Count_sz, Count_sz_others, P);
+            kernel->update_state(P);
+        }
     }
     this->result = ResultData{trace_topics, Count_zh, Count_sz, count_h, count_z, P};
 }
@@ -143,14 +145,16 @@ bool MasterWorker::Slave::paired_update(
     if (!pair_id_) {
         throw std::runtime_error("Pair id not set..."); 
     }
+
     if (*pair_id_ == my_id) {
         this->pair_id_ = std::nullopt;
         this->received_data = std::nullopt; 
         return false;
     }
+
     if (!received_data) {
-        throw std::runtime_error("Exchanged data not set..."); 
-    } 
+        throw std::runtime_error("Exchanged data not set...");
+    }
 
     const IntegerMatrix & Count_sz_pair = std::get<0>(*received_data);
     const DoubleMatrix & P_pair = std::get<1>(*received_data);
@@ -351,7 +355,7 @@ OutPutData MasterWorker::do_manage () {
     P.setZero(P.rows(), P.cols());
     IntegerVector trace_topics(Trace().rows());
     for (auto iter = slave_results.begin(); iter != slave_results.end(); iter++) {
-        size_t worker_id = iter->first;
+        const size_t worker_id = iter->first;
         {
             const IntegerVector & trace_topics_slave = iter->second.trace_topics;
             size_t i = 0;

@@ -45,9 +45,6 @@ inline double dir_posterior(double joint_count, double global_count,
     double numerator = smooth + joint_count;
     double denominator = global_count + smooth * num_occurences;
     if (denominator == 0) return 0;
-//    if (numerator > 0) {
-//        cout << (numerator / denominator) << endl;
-//    }
     return numerator / denominator;
 }
 
