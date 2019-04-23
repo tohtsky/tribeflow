@@ -102,7 +102,6 @@ void MasterWorker::Slave::learn () {
 
     vector<double> prob_topics_aux(nz, 0.0);
 
-    //IntegerMatrix Count_sz_pair = IntegerMatrix::Zero(ns, nz);
     IntegerMatrix Count_sz_others = IntegerMatrix::Zero(ns, nz);
     IntegerMatrix Count_sz_sum = IntegerMatrix::Zero(ns, nz); 
 
@@ -118,7 +117,7 @@ void MasterWorker::Slave::learn () {
         // em
         em(
             Dts, Trace, trace_hyper_ids, trace_topics,
-            stamps, Count_zh, Count_sz, count_h, count_z,
+            stamps, Count_zh, Count_sz_sum, count_h, count_z,
             alpha_zh, beta_zs, prob_topics_aux,
             Theta_zh, Psi_sz, CACHE_SIZE, 0,  std::move(kernel), 
             gen, false
@@ -164,6 +163,9 @@ bool MasterWorker::Slave::paired_update(
 
     const IntegerMatrix & Count_sz_pair = std::get<0>(*received_data);
     const DoubleMatrix & P_pair = std::get<1>(*received_data);
+    if (my_id==0) {
+        cout << "pair : " << Count_sz_pair.block(0, 0, 10, 10) << endl;
+    }
 
     Count_sz_others += Count_sz_pair;
     Count_sz_others -= this->previous_encounters_s.at(*pair_id_);
@@ -468,7 +470,6 @@ OutPutData plearn(
         cout << v << ", ";
     cout << "]" << endl;
 #endif
-    cout << "hy construction" << endl;
 
     HyperParams hyper_params( 
             n_topics, n_iter, burn_in, dynamic, n_batches,

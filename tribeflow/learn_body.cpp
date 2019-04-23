@@ -47,28 +47,28 @@ void e_step(
     size_t Dt_last_col = mem_size - 1;
     for (size_t i = 0; i < n_trace; i++ ) {
         double dt = Dts(i,  Dt_last_col);
-        int hyper_iid = trace_hyper_ids[i];
-        int topic_old = trace_topics(i);
+        const int hyper_iid = trace_hyper_ids[i];
+        const int topic_old = trace_topics(i);
         Count_zh(topic_old, hyper_iid)--;
         count_h(hyper_iid) --;
         for (size_t j = 0; j < n_trace_cols; j++) { 
-            int s = Trace(i, j);
-            Count_sz(s, topic_old)--;
+            int site = Trace(i, j);
+            Count_sz(site, topic_old)--;
             count_z(topic_old) --;
         }
-        size_t new_topic = sample(i, dt, Trace, hyper_iid,
+        const size_t topic_new = sample(i, dt, Trace, hyper_iid,
                 trace_topics, previous_stamps, Count_zh,
             Count_sz, count_h, count_z, alpha_zh, beta_zs,
             prob_topics_aux, std::move(kernel), gen);
 
-        trace_topics(i) = new_topic;
-        Count_zh(new_topic, hyper_iid) ++;
+        trace_topics(i) = topic_new;
+        Count_zh(topic_new, hyper_iid) ++;
         count_h(hyper_iid) ++;
 
         for (size_t j = 0; j < n_trace_cols; j++) {
             int site = Trace(i, j);
-            Count_sz(site, new_topic) ++; 
-            count_z(new_topic) ++; 
+            Count_sz(site, topic_new) ++; 
+            count_z(topic_new) ++; 
         }
     }
 }

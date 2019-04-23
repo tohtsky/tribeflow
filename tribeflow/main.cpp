@@ -4,7 +4,7 @@
 int main () {
     string trace_fpath = "/Users/tomoki.otsuki/src/tribeflow/tribeflow/test_data/sampled_trace.data";
     size_t n_workers = 2;
-    unsigned n_topics = 50;
+    unsigned n_topics = 20;
     string model_output_path = "model.data";
     unsigned n_iter = 500;
     unsigned burn_in = 0;
@@ -26,5 +26,5 @@ int main () {
     ));
     worker.create_slaves();
     OutPutData result = worker.do_manage();
-    //cout << result.Theta_zh << endl;
+    cout << result.Psi_sz << endl;
 }
