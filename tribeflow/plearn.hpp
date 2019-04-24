@@ -9,7 +9,6 @@
 #include <queue>
 #include <atomic>
 #include <tuple>
-#include <optional>
 #include <random>
 #include <Eigen/Eigen> 
 #include "stamp_lists.hpp"
@@ -94,15 +93,15 @@ struct MasterWorker {
                 DoubleMatrix & P_local
             );
 
-            optional<std::thread> working_thread;
+            tl::optional<std::thread> working_thread;
             IntegerMatrix* send_data_count;
             DoubleMatrix* send_data_p; 
-            optional<InterThreadData> received_data;
-            optional<size_t> pair_id_;
-            optional<SlaveStatus> message_from_master;
+            tl::optional<InterThreadData> received_data;
+            tl::optional<size_t> pair_id_;
+            tl::optional<SlaveStatus> message_from_master;
             map<size_t, IntegerMatrix> previous_encounters_s;
         public:
-            optional<ResultData> result; 
+            tl::optional<ResultData> result; 
     };
 
     MasterWorker(size_t n_slaves, HyperParams hyper_params,

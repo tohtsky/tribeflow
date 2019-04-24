@@ -24,7 +24,7 @@ int main () {
 
 
     MasterWorker worker(n_workers, hyper_params, initialize_trace(
-        trace_fpath, n_topics, n_iter, 0, std::nullopt, std::nullopt
+        trace_fpath, n_topics, n_iter, 0, tl::nullopt, tl::nullopt
     ));
     worker.create_slaves();
     OutPutData result = worker.do_manage();

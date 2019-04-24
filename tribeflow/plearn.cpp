@@ -152,8 +152,8 @@ bool MasterWorker::Slave::paired_update(
     }
 
     if (*pair_id_ == my_id) {
-        this->pair_id_ = std::nullopt;
-        this->received_data = std::nullopt; 
+        this->pair_id_ = tl::nullopt;
+        this->received_data = tl::nullopt; 
         return false;
     }
 
@@ -170,8 +170,8 @@ bool MasterWorker::Slave::paired_update(
     P_local += P_pair;
     P_local /= 2;
 
-    this->pair_id_ = std::nullopt;
-    this->received_data = std::nullopt;
+    this->pair_id_ = tl::nullopt;
+    this->received_data = tl::nullopt;
     return true;
 }
 
@@ -204,10 +204,10 @@ void MasterWorker::Slave::sample() {
 
 
 SlaveStatus MasterWorker::Slave::receive_message_from_master () {
-    std::unique_lock lock(*(this->slave_mutex));
+    std::unique_lock<std::mutex> lock(*(this->slave_mutex));
     this->slave_condition->wait(lock, [this]{return message_from_master;});
     auto result = *message_from_master;
-    message_from_master = std::nullopt;
+    message_from_master = tl::nullopt;
     return result;
 }
 
@@ -474,7 +474,7 @@ OutPutData plearn(
             ); 
 
     auto input = initialize_trace(
-                trace_fpath, n_topics, n_iter, 0, std::nullopt, std::nullopt
+                trace_fpath, n_topics, n_iter, 0, tl::nullopt, tl::nullopt
                 );
     MasterWorker worker(n_workers, hyper_params,std::move(input));
     worker.create_slaves();

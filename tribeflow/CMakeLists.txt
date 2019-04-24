@@ -1,5 +1,5 @@
 find_package(Threads REQUIRED)
-set(CMAKE_CXX_FLAGS "-O3 -Wall -std=c++17 -march=native")
+set(CMAKE_CXX_FLAGS "-O3 -Wall -std=c++11 -march=native")
 
 include_directories($ENV{HOME}/local/include ) 
 include_directories(/Users/tomoki.otsuki/src/eigen)

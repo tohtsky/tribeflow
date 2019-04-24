@@ -1,65 +1,24 @@
-<a name="top"></a>
-TribeFlow
-=========
+# TribeFlow C++ re-implementation
 
-1. [Home](#top)
-2. [Datasets](#data)
-3. [Reproducibility](#reproducibility)
-4. [Competing Methods](#competition)
+Contains a C++ Implementation of TribeFlow ([origina implementation](https://github.com/flaviovdf/tribeflow)) ``plearn`` functionality.
+Instead of using MPI, parallel collapsed Gibbs sampling are performed in a single process with multiple threads. 
+Thanks to pybind11, the installation procedure has been made simpler(I believe), if you have sufficiently new version of GCC or Clang.
 
-Contains the TribeFlow (previously node-sherlock) source code.
+# Prerequisites
 
-Dependencies
-------------
+To compile the module, you need recent (C++11 compatible) version of Clang or GCC and Eigen3.3.
+Download Eigen3.3 from the official site.
 
 The python dependencies are:
 
-* Mpi4Py
+* pybind11
 * numpy
-* scipy
-* cython
-* pandas
-* plac
 
-You will also need to install and setup: 
 
-* OpenMP
-* MPI
+# How to install 
 
-How to install dependencies
----------------------------
-
-*Easy way:* Install [Anaconda Python](https://www.continuum.io/) and 
-set it up as your default enviroment.
-
-*Hard way:* Use pip or your package manager to install the dependencies. 
-
-```bash
-pip install numpy
-pip install scipy
-pip install cython
-pip install pandas
-pip install mpi4py
-pip install plac
 ```
-
-Use or package manager (*apt* on Ubuntu, *HomeBrew* on a mac) to install
-OpenMP and MPI. These are the managers I tested with. Should work on any
-other environment.
-
-Also make sure you have enum34
-
-```bash
-pip install enum34
-```
-
-How to compile
---------------
-
-Simply type `make`
-
-```bash
-make
+EIGEN3_INCLUDE_DIR=/path/to/eigen python setup.py install
 ```
 
 How to use

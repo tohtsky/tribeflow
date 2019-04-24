@@ -24,6 +24,7 @@ class get_pybind_include(object):
         self.user = user
 
     def __str__(self):
+        # lazy
         import pybind11
         return pybind11.get_include(self.user)
 

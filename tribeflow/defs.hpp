@@ -4,6 +4,7 @@
 #include<Eigen/Eigen>
 #include<map>
 #include"stamp_lists.hpp"
+#include"include/optional.hpp"
 //using namespace Eigen;
 using namespace std;
 
@@ -11,6 +12,9 @@ using DoubleMatrix = Eigen::Matrix<double, -1, -1, Eigen::RowMajor>;
 using IntegerMatrix = Eigen::Matrix<int32_t, -1, -1, Eigen::RowMajor>;
 using DoubleVector = Eigen::VectorXd;
 using IntegerVector = Eigen::VectorXi;
+
+template <typename T>
+using optional = tl::optional<T>; 
 
 
 //using IntegerVector = Eigen::Matrix<int32_t, -1, Eigen::Dynamic>;

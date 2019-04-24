@@ -13,7 +13,7 @@ size_t count_line(string file_path) {
 }
 
 InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
-        size_t from_, optional<size_t> to, optional<vector<int>> initial_assign,
+        size_t from_, tl::optional<size_t> to, tl::optional<vector<int>> initial_assign,
         int random_seed) {
     std::mt19937 gen(random_seed);
     std::uniform_int_distribution<> dist_topic_assignment(0, n_topics - 1) ;
@@ -37,7 +37,7 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
 
     size_t i = 0;
     size_t l_in_file = 1;
-    optional<size_t> mem_size_lazy;
+    tl::optional<size_t> mem_size_lazy;
 
     while (!ifs.eof()) {
         std::getline(ifs, line);
