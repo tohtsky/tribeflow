@@ -125,7 +125,7 @@ void fast_em(const DoubleMatrix & Dts, const IntegerMatrix & Trace,
         IntegerMatrix & Count_zh, IntegerMatrix & Count_sz,
         IntegerVector & count_h, IntegerVector & count_z,
         double alpha_zh, double beta_zs, vector<double> & prob_topics_aux,
-        DoubleMatrix & Theta_zh, DoubleMatrix Psi_sz, size_t n_iter,
+        DoubleMatrix & Theta_zh, DoubleMatrix & Psi_sz, size_t n_iter,
         size_t burn_in, std::unique_ptr<KernelBase> && kernel, std::mt19937 & gen) {
 
     for (size_t i = 0; i < n_iter; i++) {
@@ -156,7 +156,7 @@ void em(const DoubleMatrix & Dts, const IntegerMatrix & Trace,
         IntegerMatrix & Count_zh, IntegerMatrix & Count_sz,
         IntegerVector & count_h, IntegerVector & count_z,
         double alpha_zh, double beta_zs, vector<double> & prob_topics_aux,
-        DoubleMatrix & Theta_zh, DoubleMatrix Psi_sz, size_t n_iter,
+        DoubleMatrix & Theta_zh, DoubleMatrix & Psi_sz, size_t n_iter,
         size_t burn_in, std::unique_ptr<KernelBase> && kernel, std::mt19937 & gen,
         bool average_and_normalize) {
     fast_em(Dts, Trace, trace_hyper_ids, trace_topics, 
