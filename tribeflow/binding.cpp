@@ -27,6 +27,8 @@ PYBIND11_MODULE(tribeflowpp, m) {
         .def_readwrite("assign", &OutPutData::assign) 
         .def_readwrite("hyper2id", &OutPutData::hyper2id) 
         .def_readwrite("site2id", &OutPutData::site2id) 
+        .def_readwrite("hyper_names", &OutPutData::hyper_names) 
+        .def_readwrite("site_names", &OutPutData::site_names) 
         ;
 
     m.doc() = R"pbdoc(

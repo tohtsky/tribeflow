@@ -5,7 +5,7 @@
 #include "kernels/base.hpp"
 #include "debug.hpp"
 
-constexpr size_t PRINT_FREQ = 50;
+constexpr size_t PRINT_FREQ = 1;
 
 constexpr size_t CACHE_SIZE = 1;
 MasterWorker::Slave::Slave(MasterWorker* parent, size_t id) :
@@ -418,6 +418,8 @@ OutPutData MasterWorker::do_manage () {
     result.Count_sz = std::move(Count_sz);
     result.count_z = std::move(count_z);
     result.count_h = std::move(count_h);
+    result.hyper_names = std::move(get<HYPER_NAMES>(input_data));
+    result.site_names = std::move(get<SITE_NAMES>(input_data));
     result.kernel_name = hyper_params.kernel_name;
     return result;
 }

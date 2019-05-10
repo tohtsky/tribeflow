@@ -15,6 +15,7 @@ size_t count_line(string file_path) {
 InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
         size_t from_, tl::optional<size_t> to, tl::optional<vector<int>> initial_assign,
         int random_seed) {
+    std::cout << "start reading the trace" << std::endl;
     std::mt19937 gen(random_seed);
     std::uniform_int_distribution<> dist_topic_assignment(0, n_topics - 1) ;
 
@@ -24,6 +25,7 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
     map<int, int> count_h_dict;
     map<string, int> hyper2id;
     map<string, int> site2id; 
+    vector<string> hyper_names, site_names;
 
     string line;
     ifstream ifs(trace_fpath);
@@ -80,6 +82,7 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
         string hyper_str = words[mem_size];
         if (hyper2id.find(hyper_str) == hyper2id.end()) {
             hyper2id[hyper_str] = hyper2id.size();
+            hyper_names.push_back(hyper_str);
         }
 
         int z;
@@ -97,6 +100,7 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
             auto site_name = words[j];
             if (site2id.find(site_name) == site2id.end()) {
                 site2id[site_name] = site2id.size();
+                site_names.push_back(site_name);
             }
             int o = site2id[site_name];
             line_visits_ids.push_back(o);
@@ -181,6 +185,6 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
     //auto Psi_sz = DoubleMatrix::Zero(ns, nz);
     return std::make_tuple(Dts_mat, Trace_mat, trace_hyper_ids,
             trace_topics, previous_stamps, Count_zh, Count_sz,
-           hyper2id, site2id);
+           hyper2id, site2id, hyper_names, site_names);
 }
 

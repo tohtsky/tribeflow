@@ -21,7 +21,7 @@ using optional = tl::optional<T>;
 //using IntegerMatrix = Eigen::Matrix<int32_t, -1, -1, Eigen::Dynamic>;
 constexpr int DTS=0, TRACE=1, TRACE_HYPER=2, TRACE_TOPIC=3, 
           STAMP_LIST=4, COUNT_ZH=5, COUNT_SZ=6, HYPER2ID=7,
-          SITE2ID=8;
+          SITE2ID=8, HYPER_NAMES=9, SITE_NAMES=10;
 
 struct HyperParams {
     inline HyperParams(size_t n_topics, size_t n_iter, size_t burn_in,
@@ -55,7 +55,9 @@ using InputData = std::tuple<
     IntegerMatrix, // Count_zh
     IntegerMatrix, // Count_sz
     map<string, int>, // hyper2id
-    map<string, int> //site2id
+    map<string, int>, //site2id
+    vector<string>, // hyper_names
+    vector<string> // site_names
 >;
 
 struct OutPutData {
@@ -73,6 +75,7 @@ struct OutPutData {
     DoubleMatrix P;
     IntegerVector assign;
     map<string, int> hyper2id, site2id;
+    vector<string> hyper_names, site_names;
 };
 
 

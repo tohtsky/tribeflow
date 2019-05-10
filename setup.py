@@ -59,7 +59,7 @@ class BuildExt(build_ext):
         ct = self.compiler.compiler_type
         opts = self.c_opts.get(ct, [])
         opts.append('-O3') 
-        opts.append('-std=c++17')
+        opts.append('-std=c++11')
         opts.append('-march=native')
         for ext in self.extensions:
             ext.extra_compile_args = opts
@@ -71,7 +71,7 @@ setup(
     description='A tribeflow re-implementation using C++11',
     long_description='',
     ext_modules=ext_modules,
-    install_requires=['pybind11>=2.2'],
+    install_requires=['pybind11>=2.2', 'numpy>=1.11'],
     cmdclass={'build_ext': BuildExt},
     zip_safe=False,
 )
