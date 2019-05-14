@@ -180,9 +180,6 @@ InputData initialize_trace(string trace_fpath, size_t n_topics, size_t num_iter,
     if (Count_zh.colwise().sum().transpose() != count_h) {
         throw std::runtime_error(""); 
     }
-    //auto prob_topics_aux = Vector::Zero(nz);
-    //auto Theta_zh = DoubleMatrix::Zero(nz, nh);
-    //auto Psi_sz = DoubleMatrix::Zero(ns, nz);
     return std::make_tuple(Dts_mat, Trace_mat, trace_hyper_ids,
             trace_topics, previous_stamps, Count_zh, Count_sz,
            hyper2id, site2id, hyper_names, site_names);

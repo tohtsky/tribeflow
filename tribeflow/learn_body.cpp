@@ -200,7 +200,6 @@ size_t sample(
     size_t ns = Count_sz.rows();
     int prev;
     int site;
-    double prev_prob;
     size_t n_trace_cols = Trace.cols(); 
     site = Trace(i,0); 
     for (size_t z = 0; z < nz; z++ ) {

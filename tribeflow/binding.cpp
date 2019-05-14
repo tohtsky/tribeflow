@@ -40,9 +40,13 @@ PYBIND11_MODULE(tribeflowpp, m) {
            learn
     )pbdoc";
 
-    m.def("learn", &plearn, R"pbdoc(
+    m.def("plearn", &plearn, R"pbdoc(
         pybind parallel learn function
-    )pbdoc");
+    )pbdoc",
+        py::arg("trace_path"), py::arg("n_workers")=4, py::arg("n_topics")=50,
+        py::arg("n_iter")=2000, py::arg("alpha_zh")=1, py::arg("beta_zs")=0.001,
+        py::arg("kernel_name")="noop", py::arg("residency_priors")=std::vector<double>{}
+    );
 
 #ifdef VERSION_INFO
     m.attr("__version__") = VERSION_INFO;
